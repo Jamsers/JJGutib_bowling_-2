@@ -24,6 +24,8 @@ public class PlayerController : MonoBehaviour
     float baseXLocation;
     const float movementRangeX = 1;
 
+    bool hasBallBeenKicked = false;
+
     void Awake() {
         if (Instance != null)
             Debug.LogError("Error! There is more than one PlayerController in the scene!");
@@ -38,10 +40,14 @@ public class PlayerController : MonoBehaviour
     }
 
     public void KickBall() {
+        Vector3 currentPosition = ball.transform.position;
+        currentPosition.y += 0.2f;
+        ball.transform.position = currentPosition;
+
         ball.GetComponent<Rigidbody>().useGravity = true;
         ball.GetComponent<Rigidbody>().isKinematic = false;
         ball.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Continuous;
-        ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * 1000);
+        ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * 900);
     }
 
     // Update is called once per frame
@@ -127,7 +133,10 @@ public class PlayerController : MonoBehaviour
                 PickUpBall(other.GetComponent<PickupBall>().color);
                 break;
             case "Goal Post":
+                if (hasBallBeenKicked == true)
+                    break;
                 GameManager.Instance.SetGameState(GameManager.GameState.KickingBall);
+                hasBallBeenKicked = true;
                 break;
         }
     }

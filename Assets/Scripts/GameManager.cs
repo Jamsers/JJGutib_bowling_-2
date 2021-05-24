@@ -8,12 +8,16 @@ public class GameManager : MonoBehaviour
     public static GameState state = GameState.StartMenu;
 
     [SerializeField] GameObject startMenu;
+    [SerializeField] GameObject hudMenu;
+    [SerializeField] GameObject pinsToppledMenu;
+    [SerializeField] GameObject finishScreen;
 
     public enum GameState {
         StartMenu,
         Running,
         KickingBall,
         BallKicked,
+        FirstPinMoved,
         FinishScreen
     }
 
@@ -30,6 +34,7 @@ public class GameManager : MonoBehaviour
     public void SetGameState(GameState state) {
         if (state == GameState.Running) {
             startMenu.SetActive(false);
+            hudMenu.SetActive(true);
             PlayerController.Instance.playerAnimator.SetTrigger("switchToRun");
         }
         if (state == GameState.KickingBall) {
@@ -38,8 +43,17 @@ public class GameManager : MonoBehaviour
         if (state == GameState.BallKicked) {
             PlayerController.Instance.KickBall();
         }
+        if (state == GameState.FirstPinMoved) {
+            pinsToppledMenu.SetActive(true);
+            PinsManager.Instance.ContinouslyCheckIfPinsHaveStoppedMoving();
+        }
+        if (state == GameState.FinishScreen) {
+            hudMenu.SetActive(false);
+            finishScreen.SetActive(true);
+        }
 
         GameManager.state = state;
+        Debug.Log(state.ToString());
     }
 
 
@@ -52,6 +66,5 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
     }
 }
