@@ -59,9 +59,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ballColor: 0
-  greenMaterial: {fileID: 2100000, guid: 340b9c7d7f4a62c48896060e842655f7, type: 2}
-  yellowMaterial: {fileID: 2100000, guid: 32f41ff2fa118eb439ad774d4b39b7ad, type: 2}
-  redMaterial: {fileID: 2100000, guid: 15b92abd8326f1a46a4b2fb1f45cd73c, type: 2}
+  greenMaterial: {fileID: 2100000, guid: d800abbea59ff494f8b2eed82ebeea08, type: 2}
+  yellowMaterial: {fileID: 2100000, guid: 9b9bf7ec627fde84fab23ab9226f9d30, type: 2}
+  redMaterial: {fileID: 2100000, guid: 5349fd2669467cc4abadb262b6aa5fe7, type: 2}
 --- !u!1 &9174566728638788519
 GameObject:
   m_ObjectHideFlags: 0
@@ -120,8 +120,8 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 340b9c7d7f4a62c48896060e842655f7, type: 2}
-  - {fileID: 2100000, guid: 26bcf26e94b060449828fa9da241c770, type: 2}
+  - {fileID: 2100000, guid: 27940a61a842b6f48b7f293e408586c4, type: 2}
+  - {fileID: 2100000, guid: 996729239a5a2bd4e81d6acb9087497f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
