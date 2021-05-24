@@ -17,7 +17,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] GameObject ball;
 
 
-    ChangeColorWall.WallColor playerColor = ChangeColorWall.WallColor.Green;
+    GameManager.Color playerColor = GameManager.Color.Green;
     bool isMousedDown = false;
     Vector3 mousedDownLocation;
     float origXLocation;
@@ -113,17 +113,17 @@ public class PlayerController : MonoBehaviour
 
     }
 
-    void SetPlayerColor(ChangeColorWall.WallColor color) {
+    public void SetPlayerColor(GameManager.Color color) {
         Material materialToAssign = null;
 
         switch (color) {
-            case ChangeColorWall.WallColor.Green:
+            case GameManager.Color.Green:
                 materialToAssign = greenMaterial;
                 break;
-            case ChangeColorWall.WallColor.Yellow:
+            case GameManager.Color.Yellow:
                 materialToAssign = yellowMaterial;
                 break;
-            case ChangeColorWall.WallColor.Red:
+            case GameManager.Color.Red:
                 materialToAssign = redMaterial;
                 break;
         }
@@ -138,7 +138,7 @@ public class PlayerController : MonoBehaviour
         playerColor = color;
     }
 
-    void PickUpBall(ChangeColorWall.WallColor color) {
+    void PickUpBall(GameManager.Color color) {
         if (playerColor == color) {
             Debug.Log("ball increased");
         }

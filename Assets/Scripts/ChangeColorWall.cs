@@ -1,20 +1,15 @@
 ﻿using UnityEngine;
 
 public class ChangeColorWall : MonoBehaviour {
-    [SerializeField] WallColor wallColor;
+    [SerializeField] GameManager.Color wallColor;
 
     [SerializeField] Material greenMaterial;
     [SerializeField] Material yellowMaterial;
     [SerializeField] Material redMaterial;
 
-    [System.Serializable]
-    public enum WallColor {
-        Green,
-        Yellow,
-        Red
-    }
+    
 
-    public WallColor color {
+    public GameManager.Color color {
         get => wallColor;
     }
 
@@ -22,13 +17,13 @@ public class ChangeColorWall : MonoBehaviour {
         Material materialToAssign = null;
 
         switch (wallColor) {
-            case WallColor.Green:
+            case GameManager.Color.Green:
                 materialToAssign = greenMaterial;
                 break;
-            case WallColor.Yellow:
+            case GameManager.Color.Yellow:
                 materialToAssign = yellowMaterial;
                 break;
-            case WallColor.Red:
+            case GameManager.Color.Red:
                 materialToAssign = redMaterial;
                 break;
         }

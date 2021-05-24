@@ -18,6 +18,20 @@ public class GameManager : MonoBehaviour
 
     bool isFirstInit = true;
 
+    [System.Serializable]
+    public enum Color {
+        Green,
+        Yellow,
+        Red
+    }
+
+    [System.Serializable]
+    public enum GameplayColor {
+        Green,
+        Yellow,
+        Red
+    }
+
     public enum GameState {
         StartMenu,
         Running,
@@ -59,6 +73,8 @@ public class GameManager : MonoBehaviour
             for (int i = 0; i < levels[level-1].reference.transform.childCount; i++) {
                 levels[level - 1].reference.transform.GetChild(i).gameObject.SetActive(true);
             }
+
+            PlayerController.Instance.SetPlayerColor(levels[level - 1].reference.GetComponent<LevelData>().startingColor);
 
             if (isFirstInit)
                 isFirstInit = false;

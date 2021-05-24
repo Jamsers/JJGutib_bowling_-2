@@ -1,13 +1,13 @@
 ﻿using UnityEngine;
 
 public class PickupBall : MonoBehaviour {
-    [SerializeField] ChangeColorWall.WallColor ballColor;
+    [SerializeField] GameManager.Color ballColor;
 
     [SerializeField] Material greenMaterial;
     [SerializeField] Material yellowMaterial;
     [SerializeField] Material redMaterial;
 
-    public ChangeColorWall.WallColor color {
+    public GameManager.Color color {
         get => ballColor;
     }
 
@@ -15,13 +15,13 @@ public class PickupBall : MonoBehaviour {
         Material materialToAssign = null;
 
         switch (ballColor) {
-            case ChangeColorWall.WallColor.Green:
+            case GameManager.Color.Green:
                 materialToAssign = greenMaterial;
                 break;
-            case ChangeColorWall.WallColor.Yellow:
+            case GameManager.Color.Yellow:
                 materialToAssign = yellowMaterial;
                 break;
-            case ChangeColorWall.WallColor.Red:
+            case GameManager.Color.Red:
                 materialToAssign = redMaterial;
                 break;
         }
