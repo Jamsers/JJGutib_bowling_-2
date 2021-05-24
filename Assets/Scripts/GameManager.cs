@@ -18,6 +18,11 @@ public class GameManager : MonoBehaviour
 
     bool isFirstInit = true;
 
+    int playerPower = powerGrantedByNonColorMatch;
+    const int maxPlayerPower = 10;
+    int powerGrantedByColorMatch;
+    const int powerGrantedByNonColorMatch = 1;
+
     [System.Serializable]
     public enum Color {
         Green,
@@ -75,6 +80,9 @@ public class GameManager : MonoBehaviour
             }
 
             PlayerController.Instance.SetPlayerColor(levels[level - 1].reference.GetComponent<LevelData>().startingColor);
+
+            powerGrantedByColorMatch = Mathf.CeilToInt((float)(maxPlayerPower-powerGrantedByNonColorMatch) / levels[level - 1].reference.GetComponent<LevelData>().ballRows);
+            Debug.Log(powerGrantedByColorMatch);
 
             if (isFirstInit)
                 isFirstInit = false;
