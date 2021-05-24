@@ -6,6 +6,7 @@ public class PinsManager : MonoBehaviour
 {
     public static PinsManager Instance;
     Vector3[] pinOriginalPositions;
+    Quaternion[] pinOriginalRotations;
     // Start is called before the first frame update
     Vector3[] pinLastPositions;
 
@@ -17,13 +18,28 @@ public class PinsManager : MonoBehaviour
             Debug.LogError("Error! There is more than one PinsManager in the scene!");
         else
             Instance = this;
+
+        pinOriginalPositions = new Vector3[transform.childCount];
+        for (int i = 0; i < transform.childCount; i++) {
+            pinOriginalPositions[i] = transform.GetChild(i).transform.position;
+        }
+        pinOriginalRotations = new Quaternion[transform.childCount];
+        for (int i = 0; i < transform.childCount; i++) {
+            pinOriginalRotations[i] = transform.GetChild(i).transform.rotation;
+        }
     }
 
     void Start()
     {
-        pinOriginalPositions = new Vector3[transform.childCount];
+        
+    }
+
+    public void ResetPins() {
         for (int i = 0; i < transform.childCount; i++) {
-            pinOriginalPositions[i] = transform.GetChild(i).transform.position;
+            transform.GetChild(i).transform.position = pinOriginalPositions[i];
+        }
+        for (int i = 0; i < transform.childCount; i++) {
+            transform.GetChild(i).transform.rotation = pinOriginalRotations[i];
         }
     }
 
@@ -46,7 +62,6 @@ public class PinsManager : MonoBehaviour
 
     public void ContinouslyCheckIfPinsHaveStoppedMoving () {
         if (pinLastPositions == null) {
-            Debug.Log("Filling in pinlastpositions");
             pinLastPositions = new Vector3[transform.childCount];
             for (int i = 0; i < transform.childCount; i++) {
                 pinLastPositions[i] = transform.GetChild(i).transform.position;
@@ -57,7 +72,6 @@ public class PinsManager : MonoBehaviour
             
         for (int i = 0; i < transform.childCount; i++) {
             if (Vector3.Distance(transform.GetChild(i).transform.position, pinLastPositions[i]) > distanceToCheck) {
-                Debug.Log("Found one beyond " + distanceToCheck);
                 for (int x = 0; x < transform.childCount; x++) {
                     pinLastPositions[x] = transform.GetChild(x).transform.position;
                 }
@@ -66,7 +80,6 @@ public class PinsManager : MonoBehaviour
             }
         }
 
-        Debug.Log("Pins stopped");
         PinsHaveStoppedMoving();
     }
 

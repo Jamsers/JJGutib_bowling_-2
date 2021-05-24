@@ -24,6 +24,10 @@ public class PlayerController : MonoBehaviour
     float baseXLocation;
     const float movementRangeX = 1;
 
+    Vector3 originalBallPosition;
+    Quaternion originalBallRotation;
+    Vector3 originalPlayerPosition;
+
     bool hasBallBeenKicked = false;
 
     void Awake() {
@@ -31,12 +35,17 @@ public class PlayerController : MonoBehaviour
             Debug.LogError("Error! There is more than one PlayerController in the scene!");
         else
             Instance = this;
+
+        baseXLocation = transform.position.x;
+        originalBallPosition = ball.transform.position;
+        originalPlayerPosition = transform.position;
+        originalBallRotation = ball.transform.rotation;
     }
 
     // Start is called before the first frame update
     void Start()
     {
-        baseXLocation = transform.position.x;
+        
     }
 
     public void KickBall() {
@@ -48,6 +57,20 @@ public class PlayerController : MonoBehaviour
         ball.GetComponent<Rigidbody>().isKinematic = false;
         ball.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Continuous;
         ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * 900);
+    }
+
+    public void UnkickBall() {
+        ball.transform.position = originalBallPosition;
+        ball.transform.rotation = originalBallRotation;
+        ball.GetComponent<Rigidbody>().useGravity = false;
+        ball.GetComponent<Rigidbody>().isKinematic = true;
+        ball.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Discrete;
+        hasBallBeenKicked = false;
+    }
+
+    public void ResetPlayer() {
+        transform.position = originalPlayerPosition;
+        UnkickBall();
     }
 
     // Update is called once per frame
