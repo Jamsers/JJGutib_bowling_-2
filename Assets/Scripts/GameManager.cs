@@ -27,7 +27,7 @@ public class GameManager : MonoBehaviour
     int playerPower = powerGrantedByNonColorMatch;
     public const int maxPlayerPower = 10;
     int powerGrantedByColorMatch;
-    const int powerGrantedByNonColorMatch = 1;
+    public const int powerGrantedByNonColorMatch = 1;
 
     [System.Serializable]
     public enum Color {
@@ -77,7 +77,13 @@ public class GameManager : MonoBehaviour
         if (addedPower > maxPlayerPower) {
             addedPower = maxPlayerPower;
         }
-        playerPower = addedPower;
+        SetPlayerPower(addedPower);
+    }
+
+    void SetPlayerPower(int power) {
+        PlayerController.Instance.SetBallSize(power);
+        PowerGaugeManager.Instance.setPowerLevel(power);
+        playerPower = power;
     }
 
     public void SetGameState(int state) {
@@ -95,7 +101,10 @@ public class GameManager : MonoBehaviour
                 levels[level - 1].reference.transform.GetChild(i).gameObject.SetActive(true);
             }
 
+            SetPlayerPower(powerGrantedByNonColorMatch);
+
             PlayerController.Instance.SetPlayerColor(levels[level - 1].reference.GetComponent<LevelData>().startingColor);
+            PowerGaugeManager.Instance.ResetPip();
 
             powerGrantedByColorMatch = Mathf.CeilToInt((float)(maxPlayerPower-powerGrantedByNonColorMatch) / levels[level - 1].reference.GetComponent<LevelData>().ballRows);
 

@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class PowerGaugeManager : MonoBehaviour
 {
+    public static PowerGaugeManager Instance;
+
     [SerializeField] RectTransform powerFullMaskRect;
     [SerializeField] RectTransform powerFullRect;
     [SerializeField] RectTransform pipBaseRect;
@@ -19,6 +21,11 @@ public class PowerGaugeManager : MonoBehaviour
     const float pipMoveSpeed = 0.5f;
 
     void Awake() {
+        if (Instance != null)
+            Debug.LogError("Error! There is more than one PowerGaugeManager in the scene!");
+        else
+            Instance = this;
+
         gaugeBaseHeight = GetComponent<RectTransform>().rect.height;
 
         ConvertRectToBottomBase(powerFullMaskRect);
@@ -33,8 +40,8 @@ public class PowerGaugeManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        setPowerLevel(9);
-        StartPipMovement(9);
+        //setPowerLevel(9);
+        //StartPipMovement(9);
         //Invoke("StopPipAndGetPower", 5);
     }
 

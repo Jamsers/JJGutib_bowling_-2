@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
-{
+public class PlayerController : MonoBehaviour {
     public static PlayerController Instance;
 
     const float playerSpeed = 3;
@@ -25,10 +24,15 @@ public class PlayerController : MonoBehaviour
     const float movementRangeX = 1;
 
     Vector3 originalBallPosition;
+    Vector3 originalBallScale;
     Quaternion originalBallRotation;
     Vector3 originalPlayerPosition;
 
     bool hasBallBeenKicked = false;
+
+    const float maxBallScaleFloat = 1.6f;
+    readonly Vector3 maxBallScale = new Vector3(maxBallScaleFloat, maxBallScaleFloat, maxBallScaleFloat);
+    const float maxBallLift = 0.15f;
 
     public GameManager.Color color {
         get => playerColor;
@@ -41,15 +45,25 @@ public class PlayerController : MonoBehaviour
             Instance = this;
 
         baseXLocation = transform.position.x;
-        originalBallPosition = ball.transform.position;
+        originalBallPosition = ball.transform.localPosition;
+        originalBallScale = ball.transform.localScale;
         originalPlayerPosition = transform.position;
         originalBallRotation = ball.transform.rotation;
     }
 
     // Start is called before the first frame update
-    void Start()
-    {
-        
+    void Start() {
+
+    }
+
+    public void SetBallSize(int level) {
+        float lerpAmount = (float)level / (float)(GameManager.maxPlayerPower - GameManager.powerGrantedByNonColorMatch);
+        ball.transform.localScale = Vector3.Lerp(originalBallScale, maxBallScale, lerpAmount);
+        Vector3 currentPosition = ball.transform.localPosition;
+        currentPosition.y = Mathf.Lerp(originalBallPosition.y, originalBallPosition.y + maxBallLift, lerpAmount);
+        ball.transform.localPosition = currentPosition;
+
+
     }
 
     public void KickBall() {
@@ -64,7 +78,7 @@ public class PlayerController : MonoBehaviour
     }
 
     public void UnkickBall() {
-        ball.transform.position = originalBallPosition;
+        ball.transform.localPosition = originalBallPosition;
         ball.transform.rotation = originalBallRotation;
         ball.GetComponent<Rigidbody>().useGravity = false;
         ball.GetComponent<Rigidbody>().isKinematic = true;
@@ -78,41 +92,41 @@ public class PlayerController : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
-    {
+    void Update() {
         if (GameManager.Instance.state == GameManager.GameState.Running) {
 
-        
+
 
             if (Input.GetMouseButtonDown(0) && isMousedDown == false) {
-            isMousedDown = true;
-            mousedDownLocation = Input.mousePosition;
-            origXLocation = transform.position.x;
-        }
-
-        if (Input.GetMouseButtonUp(0)) {
-            isMousedDown = false;
-            mousedDownLocation = Vector3.zero;
-        }
-
-        if (isMousedDown) {
-            float rawMove = mousedDownLocation.x - Input.mousePosition.x;
-            float percentMove = rawMove / Screen.width;
-            Vector3 currentLocation = transform.position;
-            currentLocation.x = origXLocation - (percentMove * 3);
-            if (currentLocation.x > (baseXLocation+ movementRangeX)) {
-                currentLocation.x = (baseXLocation + movementRangeX);
+                isMousedDown = true;
+                mousedDownLocation = Input.mousePosition;
+                origXLocation = transform.position.x;
             }
-            else if (currentLocation.x < (baseXLocation - movementRangeX)) {
-                currentLocation.x = (baseXLocation - movementRangeX);
+
+            if (Input.GetMouseButtonUp(0)) {
+                isMousedDown = false;
+                mousedDownLocation = Vector3.zero;
             }
-            transform.position = currentLocation;
-        }
+
+            if (isMousedDown) {
+                float rawMove = mousedDownLocation.x - Input.mousePosition.x;
+                float percentMove = rawMove / Screen.width;
+                Vector3 currentLocation = transform.position;
+                currentLocation.x = origXLocation - (percentMove * 3);
+                if (currentLocation.x > (baseXLocation + movementRangeX)) {
+                    currentLocation.x = (baseXLocation + movementRangeX);
+                }
+                else if (currentLocation.x < (baseXLocation - movementRangeX)) {
+                    currentLocation.x = (baseXLocation - movementRangeX);
+                }
+                transform.position = currentLocation;
+            }
 
             transform.position = transform.position + ((transform.forward * playerSpeed) * Time.deltaTime);
+            ball.transform.GetChild(0).transform.Rotate(playerSpeed * 100 * Time.deltaTime, 0, 0);
         }
         else if (GameManager.Instance.state == GameManager.GameState.KickingBall) {
-            ball.transform.position = ball.transform.position + ((ball.transform.forward * playerSpeed/10) * Time.deltaTime);
+            ball.transform.position = ball.transform.position + ((ball.transform.forward * playerSpeed / 10) * Time.deltaTime);
         }
 
     }
