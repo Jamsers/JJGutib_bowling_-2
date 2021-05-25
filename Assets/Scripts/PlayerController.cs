@@ -32,6 +32,10 @@ public class PlayerController : MonoBehaviour {
     Vector3 originalBallScale;
     Quaternion originalBallRotation;
     Vector3 originalPlayerPosition;
+    Vector3 originalCameraPosition;
+    Quaternion originalCameraRotation;
+    Vector3 originalModelPosition;
+    Quaternion originalModelRotation;
 
     bool hasBallBeenKicked = false;
 
@@ -57,6 +61,10 @@ public class PlayerController : MonoBehaviour {
         originalBallScale = ball.transform.localScale;
         originalPlayerPosition = transform.position;
         originalBallRotation = ball.transform.rotation;
+        originalCameraPosition = camera.position;
+        originalCameraRotation = camera.rotation;
+        originalModelPosition = transform.GetChild(0).position;
+        originalModelRotation = transform.GetChild(0).rotation;
     }
 
     // Start is called before the first frame update
@@ -103,15 +111,15 @@ public class PlayerController : MonoBehaviour {
 
         ball.transform.localScale = originalBallScale;
         transform.position = originalPlayerPosition;
+        camera.position = originalCameraPosition;
+        camera.rotation = originalCameraRotation;
+        transform.GetChild(0).position = originalModelPosition;
+        transform.GetChild(0).rotation = originalModelRotation;
     }
 
     // Update is called once per frame
     void Update() {
-        if (GameManager.Instance.state == GameManager.GameState.StartMenu) {
-            camera.position = cameraGameplay.position;
-            camera.rotation = cameraGameplay.rotation;
-        }
-        else if (GameManager.Instance.state == GameManager.GameState.Running) {
+        if (GameManager.Instance.state == GameManager.GameState.Running) {
 
             camera.position = Vector3.MoveTowards(camera.position, cameraGameplay.position, cameraMoveSpeed*Time.deltaTime);
             camera.rotation = Quaternion.RotateTowards(camera.rotation, cameraGameplay.rotation, cameraMoveSpeed*20 * Time.deltaTime);

@@ -152,11 +152,11 @@ public class GameManager : MonoBehaviour
         }
         if (state == GameState.FirstPinMoved) {
             pinsToppledMenu.SetActive(true);
+            hudMenu.SetActive(false);
             PinsManager.Instance.ContinouslyCheckIfPinsHaveStoppedMoving();
         }
         if (state == GameState.FinishScreen) {
             PlayerController.Instance.playerAnimator.SetTrigger("switchToJump");
-            hudMenu.SetActive(false);
             finishScreen.SetActive(true);
         }
 

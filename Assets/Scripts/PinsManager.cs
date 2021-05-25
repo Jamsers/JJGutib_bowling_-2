@@ -118,6 +118,6 @@ public class PinsManager : MonoBehaviour
             }
         }
         movedPins = amountOfMovedPins;
-        GameManager.Instance.pinsToppledtext.text = movedPins.ToString();
+        GameManager.Instance.pinsToppledtext.text = (movedPins*10).ToString();
     }
 }
