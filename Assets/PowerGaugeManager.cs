@@ -83,7 +83,7 @@ public class PowerGaugeManager : MonoBehaviour
 
     public float StopPipAndGetPower() {
         isPipMoving = false;
-        pipBaseRect.gameObject.SetActive(false);
+        //pipBaseRect.gameObject.SetActive(false);
         return pipPower;
     }
 

@@ -14,6 +14,11 @@ public class PlayerController : MonoBehaviour {
     [SerializeField] Material yellowMaterial;
     [SerializeField] Material redMaterial;
     [SerializeField] GameObject ball;
+    [SerializeField] Transform camera;
+    [SerializeField] Transform cameraGameplay;
+    [SerializeField] Transform cameraKicking;
+    [SerializeField] Transform cameraCelebration;
+    [SerializeField] float cameraMoveSpeed;
 
 
     GameManager.Color playerColor = GameManager.Color.Green;
@@ -94,13 +99,22 @@ public class PlayerController : MonoBehaviour {
     public void ResetPlayer() {
         transform.position = originalPlayerPosition;
         UnkickBall();
+
+
+        ball.transform.localScale = originalBallScale;
+        transform.position = originalPlayerPosition;
     }
 
     // Update is called once per frame
     void Update() {
-        if (GameManager.Instance.state == GameManager.GameState.Running) {
+        if (GameManager.Instance.state == GameManager.GameState.StartMenu) {
+            camera.position = cameraGameplay.position;
+            camera.rotation = cameraGameplay.rotation;
+        }
+        else if (GameManager.Instance.state == GameManager.GameState.Running) {
 
-
+            camera.position = Vector3.MoveTowards(camera.position, cameraGameplay.position, cameraMoveSpeed*Time.deltaTime);
+            camera.rotation = Quaternion.RotateTowards(camera.rotation, cameraGameplay.rotation, cameraMoveSpeed*20 * Time.deltaTime);
 
             if (Input.GetMouseButtonDown(0) && isMousedDown == false) {
                 isMousedDown = true;
@@ -131,10 +145,16 @@ public class PlayerController : MonoBehaviour {
             ball.transform.GetChild(0).transform.Rotate(playerSpeed * 100 * Time.deltaTime, 0, 0);
         }
         else if (GameManager.Instance.state == GameManager.GameState.KickingBall) {
+            camera.position = Vector3.MoveTowards(camera.position, cameraKicking.position, cameraMoveSpeed * Time.deltaTime);
+            camera.rotation = Quaternion.RotateTowards(camera.rotation, cameraKicking.rotation, cameraMoveSpeed * 20 * Time.deltaTime);
             if (Input.GetMouseButtonDown(0)) {
                 GameManager.Instance.RetrievePower();
             }
             ball.transform.position = ball.transform.position + ((ball.transform.forward * playerSpeed / kickingMoveForwardDivider) * Time.deltaTime);
+        }
+        else if (GameManager.Instance.state == GameManager.GameState.BallKicked || GameManager.Instance.state == GameManager.GameState.FirstPinMoved || GameManager.Instance.state == GameManager.GameState.FinishScreen) {
+            camera.position = Vector3.MoveTowards(camera.position, cameraCelebration.position, cameraMoveSpeed * Time.deltaTime);
+            camera.rotation = Quaternion.RotateTowards(camera.rotation, cameraCelebration.rotation, cameraMoveSpeed * 20 * Time.deltaTime);
         }
 
     }
