@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Soccer Ball Wall White
-  m_Shader: {fileID: 10722, guid: 0000000000000000f000000000000000, type: 0}
+  m_Name: M_Hair
+  m_Shader: {fileID: 10703, guid: 0000000000000000f000000000000000, type: 0}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -40,7 +40,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: fdce948d0affaf646852c052b9d85bcd, type: 3}
+        m_Texture: {fileID: 2800000, guid: 26dde77c5b6fee84798a4a0e01171e60, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -73,6 +73,5 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmisColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0}
+    - _Color: {r: 0.16981131, g: 0.06114275, b: 0.020024916, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
