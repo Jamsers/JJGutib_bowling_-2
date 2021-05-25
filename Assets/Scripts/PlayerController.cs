@@ -30,6 +30,10 @@ public class PlayerController : MonoBehaviour
 
     bool hasBallBeenKicked = false;
 
+    public GameManager.Color color {
+        get => playerColor;
+    }
+
     void Awake() {
         if (Instance != null)
             Debug.LogError("Error! There is more than one PlayerController in the scene!");
@@ -138,22 +142,13 @@ public class PlayerController : MonoBehaviour
         playerColor = color;
     }
 
-    void PickUpBall(GameManager.Color color) {
-        if (playerColor == color) {
-            Debug.Log("ball increased");
-        }
-        else {
-            Debug.Log("ball decreased");
-        }
-    }
-
     public void OnTriggerEnter(Collider other) {
         switch (other.tag) {
             case "Change Color Wall":
                 SetPlayerColor(other.GetComponent<ChangeColorWall>().color);
                 break;
             case "Pickup Ball":
-                PickUpBall(other.GetComponent<PickupBall>().color);
+                GameManager.Instance.PickUpBall(other.GetComponent<PickupBall>().color);
                 break;
             case "Goal Post":
                 if (hasBallBeenKicked == true)

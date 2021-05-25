@@ -19,7 +19,7 @@ public class GameManager : MonoBehaviour
     bool isFirstInit = true;
 
     int playerPower = powerGrantedByNonColorMatch;
-    const int maxPlayerPower = 10;
+    public const int maxPlayerPower = 10;
     int powerGrantedByColorMatch;
     const int powerGrantedByNonColorMatch = 1;
 
@@ -62,6 +62,23 @@ public class GameManager : MonoBehaviour
             levels[i].reference = Instantiate(levels[i].prefab, null);
             levels[i].reference.SetActive(false);
         }
+    }
+
+    public void PickUpBall(Color ballColor) {
+        if (ballColor == PlayerController.Instance.color) {
+            AddPlayerPower(powerGrantedByColorMatch);
+        }
+        else {
+            AddPlayerPower(powerGrantedByNonColorMatch);
+        }
+    }
+
+    void AddPlayerPower(int power) {
+        int addedPower = playerPower + power;
+        if (addedPower > maxPlayerPower) {
+            addedPower = maxPlayerPower;
+        }
+        playerPower = addedPower;
     }
 
     public void SetGameState(int state) {
