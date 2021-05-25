@@ -5,7 +5,7 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance = null;
-    public static GameState state = GameState.StartMenu;
+    GameState gameState = GameState.StartMenu;
 
     [SerializeField] Level[] levels;
 
@@ -13,6 +13,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject hudMenu;
     [SerializeField] GameObject pinsToppledMenu;
     [SerializeField] GameObject finishScreen;
+
+    public GameState state
+    {
+        get { return gameState; }
+        set { SetGameState(value); }
+    }
 
     int level = 2;
 
@@ -25,13 +31,6 @@ public class GameManager : MonoBehaviour
 
     [System.Serializable]
     public enum Color {
-        Green,
-        Yellow,
-        Red
-    }
-
-    [System.Serializable]
-    public enum GameplayColor {
         Green,
         Yellow,
         Red
@@ -99,7 +98,6 @@ public class GameManager : MonoBehaviour
             PlayerController.Instance.SetPlayerColor(levels[level - 1].reference.GetComponent<LevelData>().startingColor);
 
             powerGrantedByColorMatch = Mathf.CeilToInt((float)(maxPlayerPower-powerGrantedByNonColorMatch) / levels[level - 1].reference.GetComponent<LevelData>().ballRows);
-            Debug.Log(powerGrantedByColorMatch);
 
             if (isFirstInit)
                 isFirstInit = false;
@@ -133,7 +131,7 @@ public class GameManager : MonoBehaviour
             finishScreen.SetActive(true);
         }
 
-        GameManager.state = state;
+        gameState = state;
         Debug.Log(state.ToString());
     }
 

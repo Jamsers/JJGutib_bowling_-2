@@ -46,12 +46,12 @@ public class PinsManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (GameManager.state == GameManager.GameState.BallKicked) {
+        if (GameManager.Instance.state == GameManager.GameState.BallKicked) {
             if (FirstPinHasMoved()) {
                 GameManager.Instance.SetGameState(GameManager.GameState.FirstPinMoved);
             }
         }
-        if (GameManager.state == GameManager.GameState.FirstPinMoved) {
+        if (GameManager.Instance.state == GameManager.GameState.FirstPinMoved) {
            
         }
     }

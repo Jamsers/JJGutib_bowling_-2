@@ -80,7 +80,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (GameManager.state == GameManager.GameState.Running) {
+        if (GameManager.Instance.state == GameManager.GameState.Running) {
 
         
 
@@ -111,7 +111,7 @@ public class PlayerController : MonoBehaviour
 
             transform.position = transform.position + ((transform.forward * playerSpeed) * Time.deltaTime);
         }
-        else if (GameManager.state == GameManager.GameState.KickingBall) {
+        else if (GameManager.Instance.state == GameManager.GameState.KickingBall) {
             ball.transform.position = ball.transform.position + ((ball.transform.forward * playerSpeed/10) * Time.deltaTime);
         }
 
