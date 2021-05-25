@@ -211,7 +211,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &232208287
 RectTransform:
   m_ObjectHideFlags: 0
@@ -637,7 +637,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &488507041
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1667,12 +1667,19 @@ MonoBehaviour:
   - prefab: {fileID: 1467276623136859197, guid: 205443c9b9f38fc40b3cd9839793fbbe,
       type: 3}
     reference: {fileID: 0}
+  - prefab: {fileID: 3897275021446461286, guid: f6e1b2d4320f42c49896f8ebeb5ac783,
+      type: 3}
+    reference: {fileID: 0}
+  - prefab: {fileID: 287763486925573417, guid: c23164b68ac2d5b4faea070d3d30b077, type: 3}
+    reference: {fileID: 0}
   startMenu: {fileID: 232208286}
   hudMenu: {fileID: 1357419310}
   pinsToppledMenu: {fileID: 488507040}
   pinsToppledtext: {fileID: 403053029}
   levelText: {fileID: 870743575}
   finishScreen: {fileID: 1361662134}
+  gameFinishedText: {fileID: 1896801463}
+  gameFinishedButtonText: {fileID: 751041434}
 --- !u!4 &1236010490
 Transform:
   m_ObjectHideFlags: 0
@@ -1738,7 +1745,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1361662135
 RectTransform:
   m_ObjectHideFlags: 0

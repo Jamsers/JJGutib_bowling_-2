@@ -199,6 +199,7 @@ public class PlayerController : MonoBehaviour {
                 break;
             case "Pickup Ball":
                 GameManager.Instance.PickUpBall(other.GetComponent<PickupBall>().color);
+                other.GetComponent<PickupBall>().HideBall();
                 break;
             case "Goal Post":
                 if (hasBallBeenKicked == true)

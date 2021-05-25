@@ -28,8 +28,8 @@ public class ChangeColorWall : MonoBehaviour {
                 break;
         }
 
-        for (int i = 0; i < transform.childCount; i++) {
-            Renderer renderer = transform.GetChild(i).GetComponent<Renderer>();
+        for (int i = 0; i < transform.GetChild(0).childCount; i++) {
+            Renderer renderer = transform.GetChild(0).GetChild(i).GetComponent<Renderer>();
             Material[] currentMaterials = renderer.materials;
             currentMaterials[1] = materialToAssign;
             renderer.materials = currentMaterials;

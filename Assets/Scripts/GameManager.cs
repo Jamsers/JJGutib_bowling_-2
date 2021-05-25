@@ -16,6 +16,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] public Text pinsToppledtext;
     [SerializeField] Text levelText;
     [SerializeField] GameObject finishScreen;
+    [SerializeField] Text gameFinishedText;
+    [SerializeField] Text gameFinishedButtonText;
 
     public GameState state
     {
@@ -114,6 +116,7 @@ public class GameManager : MonoBehaviour
             }
 
             levels[level - 1].reference.SetActive(true);
+            levels[level - 1].reference.GetComponent<LevelData>().ResetLevel(); ;
 
             for (int i = 0; i < levels[level-1].reference.transform.childCount; i++) {
                 levels[level - 1].reference.transform.GetChild(i).gameObject.SetActive(true);
@@ -158,6 +161,14 @@ public class GameManager : MonoBehaviour
         if (state == GameState.FinishScreen) {
             PlayerController.Instance.playerAnimator.SetTrigger("switchToJump");
             finishScreen.SetActive(true);
+            if (level == levels.Length) {
+                gameFinishedText.text = "Game Finished!";
+                gameFinishedButtonText.text = "Restart";
+            }
+            else {
+                gameFinishedText.text = "Level Completed!";
+                gameFinishedButtonText.text = "Next";
+            }
         }
 
         gameState = state;

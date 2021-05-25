@@ -31,4 +31,8 @@ public class PickupBall : MonoBehaviour {
         currentMaterials[0] = materialToAssign;
         renderer.materials = currentMaterials;
     }
+
+    public void HideBall() {
+        gameObject.SetActive(false);
+    }
 }
