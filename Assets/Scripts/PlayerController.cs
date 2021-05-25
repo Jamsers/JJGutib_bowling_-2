@@ -33,6 +33,9 @@ public class PlayerController : MonoBehaviour {
     const float maxBallScaleFloat = 1.6f;
     readonly Vector3 maxBallScale = new Vector3(maxBallScaleFloat, maxBallScaleFloat, maxBallScaleFloat);
     const float maxBallLift = 0.15f;
+    const float maxBallForward = 0.07f;
+
+    public float kickingMoveForwardDivider;
 
     public GameManager.Color color {
         get => playerColor;
@@ -61,12 +64,13 @@ public class PlayerController : MonoBehaviour {
         ball.transform.localScale = Vector3.Lerp(originalBallScale, maxBallScale, lerpAmount);
         Vector3 currentPosition = ball.transform.localPosition;
         currentPosition.y = Mathf.Lerp(originalBallPosition.y, originalBallPosition.y + maxBallLift, lerpAmount);
+        currentPosition.z = Mathf.Lerp(originalBallPosition.z, originalBallPosition.z + maxBallForward, lerpAmount);
         ball.transform.localPosition = currentPosition;
 
 
     }
 
-    public void KickBall() {
+    public void KickBall(float power) {
         Vector3 currentPosition = ball.transform.position;
         currentPosition.y += 0.2f;
         ball.transform.position = currentPosition;
@@ -74,7 +78,8 @@ public class PlayerController : MonoBehaviour {
         ball.GetComponent<Rigidbody>().useGravity = true;
         ball.GetComponent<Rigidbody>().isKinematic = false;
         ball.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Continuous;
-        ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * 900);
+        ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * (1200*power));
+        playerAnimator.SetFloat("kickSpeed", 1f);
     }
 
     public void UnkickBall() {
@@ -126,7 +131,10 @@ public class PlayerController : MonoBehaviour {
             ball.transform.GetChild(0).transform.Rotate(playerSpeed * 100 * Time.deltaTime, 0, 0);
         }
         else if (GameManager.Instance.state == GameManager.GameState.KickingBall) {
-            ball.transform.position = ball.transform.position + ((ball.transform.forward * playerSpeed / 10) * Time.deltaTime);
+            if (Input.GetMouseButtonDown(0)) {
+                GameManager.Instance.RetrievePower();
+            }
+            ball.transform.position = ball.transform.position + ((ball.transform.forward * playerSpeed / kickingMoveForwardDivider) * Time.deltaTime);
         }
 
     }

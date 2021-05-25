@@ -26,6 +26,7 @@ public class PowerGaugeManager : MonoBehaviour
         else
             Instance = this;
 
+        transform.parent.gameObject.SetActive(false);
         gaugeBaseHeight = GetComponent<RectTransform>().rect.height;
 
         ConvertRectToBottomBase(powerFullMaskRect);

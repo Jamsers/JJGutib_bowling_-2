@@ -1390,6 +1390,8 @@ MonoBehaviour:
   startMenu: {fileID: 232208286}
   hudMenu: {fileID: 1357419310}
   pinsToppledMenu: {fileID: 488507040}
+  pinsToppledtext: {fileID: 403053029}
+  levelText: {fileID: 870743575}
   finishScreen: {fileID: 1361662134}
 --- !u!4 &1236010490
 Transform:
@@ -2131,6 +2133,7 @@ MonoBehaviour:
   yellowMaterial: {fileID: 2100000, guid: 32f41ff2fa118eb439ad774d4b39b7ad, type: 2}
   redMaterial: {fileID: 2100000, guid: 15b92abd8326f1a46a4b2fb1f45cd73c, type: 2}
   ball: {fileID: 3482612896732120136}
+  kickingMoveForwardDivider: 0
 --- !u!1 &2041764992
 GameObject:
   m_ObjectHideFlags: 0
@@ -6065,6 +6068,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6b86a7ac2011f54d8f918cab5a8be0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  movedPins: 0
 --- !u!33 &5804122030112106923
 MeshFilter:
   m_ObjectHideFlags: 0

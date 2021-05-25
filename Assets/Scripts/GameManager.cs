@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -12,6 +13,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject startMenu;
     [SerializeField] GameObject hudMenu;
     [SerializeField] GameObject pinsToppledMenu;
+    [SerializeField] public Text pinsToppledtext;
+    [SerializeField] Text levelText;
     [SerializeField] GameObject finishScreen;
 
     public GameState state
@@ -20,14 +23,17 @@ public class GameManager : MonoBehaviour
         set { SetGameState(value); }
     }
 
-    int level = 2;
+    int level = 1;
 
     bool isFirstInit = true;
+    float retrievedPower;
 
     int playerPower = powerGrantedByNonColorMatch;
     public const int maxPlayerPower = 10;
     int powerGrantedByColorMatch;
     public const int powerGrantedByNonColorMatch = 1;
+
+    bool hasPowerBeenRetrieved = false;
 
     [System.Serializable]
     public enum Color {
@@ -91,6 +97,18 @@ public class GameManager : MonoBehaviour
     }
     public void SetGameState(GameState state) {
         if (state == GameState.StartMenu) {
+            if (isFirstInit) {
+                isFirstInit = false;
+            }
+            else {
+                PlayerController.Instance.playerAnimator.SetTrigger("switchToIdle");
+                level++;
+                if (level > levels.Length)
+                    level = 1;
+            }
+
+            levelText.text = "Level " + level.ToString();
+
             for (int i = 0; i < levels.Length; i++) {
                 levels[i].reference.SetActive(false);
             }
@@ -101,6 +119,7 @@ public class GameManager : MonoBehaviour
                 levels[level - 1].reference.transform.GetChild(i).gameObject.SetActive(true);
             }
 
+            hasPowerBeenRetrieved = false;
             SetPlayerPower(powerGrantedByNonColorMatch);
 
             PlayerController.Instance.SetPlayerColor(levels[level - 1].reference.GetComponent<LevelData>().startingColor);
@@ -108,11 +127,6 @@ public class GameManager : MonoBehaviour
 
             powerGrantedByColorMatch = Mathf.CeilToInt((float)(maxPlayerPower-powerGrantedByNonColorMatch) / levels[level - 1].reference.GetComponent<LevelData>().ballRows);
 
-            if (isFirstInit)
-                isFirstInit = false;
-            else
-                PlayerController.Instance.playerAnimator.SetTrigger("switchToIdle");
-            
             startMenu.SetActive(true);
             finishScreen.SetActive(false);
             pinsToppledMenu.SetActive(false);
@@ -126,9 +140,15 @@ public class GameManager : MonoBehaviour
         }
         if (state == GameState.KickingBall) {
             PlayerController.Instance.playerAnimator.SetTrigger("switchToKick");
+            PlayerController.Instance.playerAnimator.SetFloat("kickSpeed", 0.2f);
+            PlayerController.Instance.kickingMoveForwardDivider = 60;
+            PowerGaugeManager.Instance.StartPipMovement(playerPower);
         }
         if (state == GameState.BallKicked) {
-            PlayerController.Instance.KickBall();
+            if (hasPowerBeenRetrieved == false) {
+                RetrievePower();
+            }
+            PlayerController.Instance.KickBall(retrievedPower);
         }
         if (state == GameState.FirstPinMoved) {
             pinsToppledMenu.SetActive(true);
@@ -144,6 +164,15 @@ public class GameManager : MonoBehaviour
         Debug.Log(state.ToString());
     }
 
+    public void RetrievePower() {
+        if (hasPowerBeenRetrieved)
+            return;
+
+        hasPowerBeenRetrieved = true;
+        retrievedPower = PowerGaugeManager.Instance.StopPipAndGetPower();
+        PlayerController.Instance.playerAnimator.SetFloat("kickSpeed", 3f);
+        PlayerController.Instance.kickingMoveForwardDivider = 5;
+    }
 
     // Start is called before the first frame update
     void Start()
