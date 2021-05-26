@@ -23,8 +23,6 @@ public class GameManager : MonoBehaviour {
 
     [Header("Level Prefabs")]
     [SerializeField] Level[] levels;
-
-    static float powerPlaySpacePercent;
     
     static GameManager instance;
     static StateChangedEvent stateChangedEvent;
@@ -39,8 +37,6 @@ public class GameManager : MonoBehaviour {
 
     int level;
     bool hasPenalty;
-
-    public static float PowerPercent { get => powerPlaySpacePercent; }
 
     public static GameManager Instance { get => instance; }
     public static StateChangedEvent StateChanged { get => stateChangedEvent; }
@@ -76,7 +72,6 @@ public class GameManager : MonoBehaviour {
 
         StateChanged.AddListener(StateSetup);
         PickedUpBall.AddListener(PickUpBall);
-        PowerChanged.AddListener(SetPowerPlaySpacePercent);
     }
 
     void Start() {
@@ -160,19 +155,13 @@ public class GameManager : MonoBehaviour {
 
     void AddPower(int power) {
         int addedPower = Power + power;
-        if (addedPower > maxPlayerPower) {
-            addedPower = maxPlayerPower;
-        }
-        else if (addedPower < powerGrantedByNonColorMatch) {
-            addedPower = powerGrantedByNonColorMatch;
-        }
-        Power = addedPower;
-    }
 
-    void SetPowerPlaySpacePercent(int power) {
-        float adjustedPower = power - powerGrantedByNonColorMatch;
-        float adjustedMax = maxPlayerPower - powerGrantedByNonColorMatch;
-        powerPlaySpacePercent = adjustedPower / adjustedMax;
+        if (addedPower > maxPlayerPower)
+            addedPower = maxPlayerPower;
+        else if (addedPower < powerGrantedByNonColorMatch)
+            addedPower = powerGrantedByNonColorMatch;
+
+        Power = addedPower;
     }
 
     IEnumerator UpdatePinsToppledText() {

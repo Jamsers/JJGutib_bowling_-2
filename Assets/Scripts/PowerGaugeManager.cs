@@ -4,6 +4,7 @@ using Bowling;
 
 public class PowerGaugeManager : MonoBehaviour {
     [SerializeField] float pipMoveSpeed;
+    [SerializeField] float speedFloor;
     [SerializeField] RectTransform powerFullMaskRect;
     [SerializeField] RectTransform powerFullRect;
     [SerializeField] RectTransform pipBaseRect;
@@ -12,6 +13,9 @@ public class PowerGaugeManager : MonoBehaviour {
     readonly float[] HardCodedPips = { 0.0549f, 0.1172f, 0.1818f, 0.2540f, 0.3404f, 0.4268f, 0.5267f, 0.6233f, 0.7238f, 0.8358f, 0.9644f };
 
     float gaugeBaseHeight;
+    static float gaugePipPower;
+
+    public static float PipPower { get => gaugePipPower; }
 
     void Awake() {
         gaugeBaseHeight = GetComponent<RectTransform>().rect.height;
@@ -73,32 +77,44 @@ public class PowerGaugeManager : MonoBehaviour {
 
     IEnumerator PipMovement(int moveCap) {
         pipBaseRect.gameObject.SetActive(true);
+
+        // Make speed slower if gauge level is lower
+        float speedRemainder = 1 - speedFloor;
+        float moveCapPercentage = moveCap * 0.1f;
+        float speedMultiplier = speedFloor + speedRemainder * moveCapPercentage;
+
         bool isMovingUp = true;
         float floor = HardCodedPips[0];
-        float currentLocation = floor;
         float ceiling = HardCodedPips[moveCap];
+        float lerpPercent = 0;
 
         while (true) {
-            // Make speed slower if gauge level is lower
-            float moveAmount = pipMoveSpeed * GameManager.PowerPercent * Time.deltaTime;
+            float moveAmount = pipMoveSpeed * speedMultiplier * Time.deltaTime;
 
-            // Move pip up and down within constraints of filled gauge
+            // move up and down
             if (isMovingUp) {
-                currentLocation += moveAmount;
-                if (currentLocation >= ceiling) {
-                    currentLocation = ceiling;
+                lerpPercent += moveAmount;
+                if (lerpPercent >= 1) {
+                    lerpPercent = 1;
                     isMovingUp = false;
                 }
             }
             else if (!isMovingUp) {
-                currentLocation -= moveAmount;
-                if (currentLocation <= floor) {
-                    currentLocation = floor;
+                lerpPercent -= moveAmount;
+                if (lerpPercent <= 0) {
+                    lerpPercent = 0;
                     isMovingUp = true;
                 }
             }
 
-            SetRectHeightToPipLevel(pipBaseRect, currentLocation);
+            float pipLocation = Mathf.SmoothStep(floor, ceiling, lerpPercent);
+            SetRectHeightToPipLevel(pipBaseRect, pipLocation);
+
+            // then store current power pointed to by pip
+            float adjustedPip = pipLocation - floor;
+            float adjustedCeiling = HardCodedPips[10] - floor;
+            gaugePipPower = adjustedPip / adjustedCeiling;
+
             yield return null;
         }
     }

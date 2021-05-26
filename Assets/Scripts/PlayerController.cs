@@ -63,7 +63,7 @@ public class PlayerController : MonoBehaviour {
     [System.Serializable]
     struct CameraTarget {
         public Transform target;
-        public float speed;
+        public float time;
     }
 
     void Awake() {
@@ -140,7 +140,7 @@ public class PlayerController : MonoBehaviour {
         ball.transform.position = currentPosition;
         ball.GetComponent<Rigidbody>().useGravity = true;
         ball.GetComponent<Rigidbody>().isKinematic = false;
-        ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * (baseKickForce + (maxAdditionalKickForce * GameManager.PowerPercent)));
+        ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * (baseKickForce + (maxAdditionalKickForce * PowerGaugeManager.PipPower)));
     }
 
     void UnkickBall() {
@@ -232,13 +232,14 @@ public class PlayerController : MonoBehaviour {
         manualKicked = true;
     }
 
-    void SetBallSize(int level) {
+    void SetBallSize(int power) {
+        float percentage = power * 0.1f;
         Vector3 maxBallScaleVector = new Vector3(maxBallScale, maxBallScale, maxBallScale);
-        ball.transform.localScale = Vector3.Lerp(originalBallScale, maxBallScaleVector, GameManager.PowerPercent);
+        ball.transform.localScale = Vector3.Lerp(originalBallScale, maxBallScaleVector, percentage);
 
         Vector3 currentPosition = ball.transform.localPosition;
-        currentPosition.y = Mathf.Lerp(originalBallPosition.y, originalBallPosition.y + maxBallLift, GameManager.PowerPercent);
-        currentPosition.z = Mathf.Lerp(originalBallPosition.z, originalBallPosition.z + maxBallForward, GameManager.PowerPercent);
+        currentPosition.y = Mathf.Lerp(originalBallPosition.y, originalBallPosition.y + maxBallLift, percentage);
+        currentPosition.z = Mathf.Lerp(originalBallPosition.z, originalBallPosition.z + maxBallForward, percentage);
         ball.transform.localPosition = currentPosition;
     }
 
@@ -249,7 +250,7 @@ public class PlayerController : MonoBehaviour {
         float lerpPercent = 0;
 
         while (lerpPercent < 1) {
-            lerpPercent = (Time.time - timeStarted) / cameraTarget.speed;
+            lerpPercent = (Time.time - timeStarted) / cameraTarget.time;
             float smoothedLerp = Mathf.SmoothStep(0, 1, lerpPercent);
             camera.position = Vector3.Lerp(currentCameraPostion, cameraTarget.target.position, smoothedLerp);
             camera.rotation = Quaternion.Lerp(currentCameraRotation, cameraTarget.target.rotation, smoothedLerp);

@@ -17,12 +17,12 @@ public class PinsManager : MonoBehaviour {
     void Awake() {
         pinOriginalPositions = new Vector3[transform.childCount];
         for (int i = 0; i < transform.childCount; i++) {
-            pinOriginalPositions[i] = transform.GetChild(i).transform.position;
+            pinOriginalPositions[i] = transform.GetChild(i).position;
         }
 
         pinOriginalRotations = new Quaternion[transform.childCount];
         for (int i = 0; i < transform.childCount; i++) {
-            pinOriginalRotations[i] = transform.GetChild(i).transform.rotation;
+            pinOriginalRotations[i] = transform.GetChild(i).rotation;
         }
 
         GameManager.StateChanged.AddListener(GameStateChanged);
@@ -44,15 +44,23 @@ public class PinsManager : MonoBehaviour {
 
     void ResetPins() {
         for (int i = 0; i < transform.childCount; i++) {
-            transform.GetChild(i).transform.position = pinOriginalPositions[i];
+            transform.GetChild(i).GetComponent<Rigidbody>().isKinematic = true;
         }
         for (int i = 0; i < transform.childCount; i++) {
-            transform.GetChild(i).transform.rotation = pinOriginalRotations[i];
+            transform.GetChild(i).position = pinOriginalPositions[i];
+        }
+        for (int i = 0; i < transform.childCount; i++) {
+            transform.GetChild(i).rotation = pinOriginalRotations[i];
         }
     }
 
     IEnumerator FirstPinMovementChecking() {
         Invoke(nameof(StopFirstPinMovementChecking), dudKickTimeout);
+
+        // Unlock physics of pins
+        for (int i = 0; i < transform.childCount; i++) {
+            transform.GetChild(i).GetComponent<Rigidbody>().isKinematic = false;
+        }
 
         while (true) {
             for (int i = 0; i < transform.childCount; i++) {
