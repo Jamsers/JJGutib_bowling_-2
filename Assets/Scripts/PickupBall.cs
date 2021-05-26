@@ -1,27 +1,25 @@
 ﻿using UnityEngine;
 
 public class PickupBall : MonoBehaviour {
-    [SerializeField] GameManager.Color ballColor;
+    [SerializeField] Bowling.Color ballColor;
 
     [SerializeField] Material greenMaterial;
     [SerializeField] Material yellowMaterial;
     [SerializeField] Material redMaterial;
 
-    public GameManager.Color color {
-        get => ballColor;
-    }
+    public Bowling.Color Color { get => ballColor; }
 
     void Start() {
         Material materialToAssign = null;
 
         switch (ballColor) {
-            case GameManager.Color.Green:
+            case Bowling.Color.Green:
                 materialToAssign = greenMaterial;
                 break;
-            case GameManager.Color.Yellow:
+            case Bowling.Color.Yellow:
                 materialToAssign = yellowMaterial;
                 break;
-            case GameManager.Color.Red:
+            case Bowling.Color.Red:
                 materialToAssign = redMaterial;
                 break;
         }

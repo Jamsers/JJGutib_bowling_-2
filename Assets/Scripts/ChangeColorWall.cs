@@ -1,35 +1,33 @@
 ﻿using UnityEngine;
 
 public class ChangeColorWall : MonoBehaviour {
-    [SerializeField] GameManager.Color wallColor;
+    [SerializeField] Bowling.Color wallColor;
 
     [SerializeField] Material greenMaterial;
     [SerializeField] Material yellowMaterial;
     [SerializeField] Material redMaterial;
 
-    
-
-    public GameManager.Color color {
-        get => wallColor;
-    }
+    public Bowling.Color Color { get => wallColor; }
 
     void Start() {
         Material materialToAssign = null;
 
         switch (wallColor) {
-            case GameManager.Color.Green:
+            case Bowling.Color.Green:
                 materialToAssign = greenMaterial;
                 break;
-            case GameManager.Color.Yellow:
+            case Bowling.Color.Yellow:
                 materialToAssign = yellowMaterial;
                 break;
-            case GameManager.Color.Red:
+            case Bowling.Color.Red:
                 materialToAssign = redMaterial;
                 break;
         }
 
-        for (int i = 0; i < transform.GetChild(0).childCount; i++) {
-            Renderer renderer = transform.GetChild(0).GetChild(i).GetComponent<Renderer>();
+        Transform animationContainer = transform.GetChild(0);
+
+        for (int i = 0; i < animationContainer.childCount; i++) {
+            Renderer renderer = animationContainer.GetChild(i).GetComponent<Renderer>();
             Material[] currentMaterials = renderer.materials;
             currentMaterials[1] = materialToAssign;
             renderer.materials = currentMaterials;

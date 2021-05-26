@@ -1,198 +1,185 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Bowling;
 
-public class GameManager : MonoBehaviour
-{
-    public static GameManager Instance = null;
-    GameState gameState = GameState.StartMenu;
+public class GameManager : MonoBehaviour {
+    [Header("Game Settings")]
+    [SerializeField] int maxPlayerPower;
+    [SerializeField] int powerGrantedByNonColorMatch;
+    [SerializeField] float scoreMultiplierForPinsScreen;
 
-    [SerializeField] Level[] levels;
+    [Header("Hud Canvas")]
+    [SerializeField] GameObject startCanvas;
+    [SerializeField] GameObject hudCanvas;
+    [SerializeField] GameObject pinsToppledCanvas;
+    [SerializeField] GameObject finishCanvas;
 
-    [SerializeField] GameObject startMenu;
-    [SerializeField] GameObject hudMenu;
-    [SerializeField] GameObject pinsToppledMenu;
-    [SerializeField] public Text pinsToppledtext;
+    [Header("Text")]
     [SerializeField] Text levelText;
-    [SerializeField] GameObject finishScreen;
+    [SerializeField] Text pinsToppledtext;
     [SerializeField] Text gameFinishedText;
     [SerializeField] Text gameFinishedButtonText;
 
-    public GameState state
-    {
+    [Header("Level Prefabs")]
+    [SerializeField] Level[] levels;
+
+    static float powerPlaySpacePercent;
+    
+    static GameManager instance;
+    static StateChangedEvent stateChangedEvent;
+    static PowerChangedEvent powerChangedEvent;
+    static ColorChangedEvent colorChangedEvent;
+    static ManualKickEvent playerKickedBallEvent;
+    static PickedUpBallEvent playerPickedUpBallEvent;
+
+    static State gameState;
+    static int playerPower;
+    static Bowling.Color playerColor;
+
+    int level;
+    bool hasPenalty;
+
+    public static float PowerPercent { get => powerPlaySpacePercent; }
+
+    public static GameManager Instance { get => instance; }
+    public static StateChangedEvent StateChanged { get => stateChangedEvent; }
+    public static PowerChangedEvent PowerChanged { get => powerChangedEvent; }
+    public static ColorChangedEvent ColorChanged { get => colorChangedEvent; }
+    public static ManualKickEvent ManualKick { get => playerKickedBallEvent; }
+    public static PickedUpBallEvent PickedUpBall { get => playerPickedUpBallEvent; }
+
+    public static State State {
         get { return gameState; }
-        set { SetGameState(value); }
+        set { gameState = value; stateChangedEvent.Invoke(value); }
     }
-
-    int level = 1;
-
-    bool isFirstInit = true;
-    float retrievedPower;
-
-    int playerPower = powerGrantedByNonColorMatch;
-    public const int maxPlayerPower = 10;
-    int powerGrantedByColorMatch;
-    public const int powerGrantedByNonColorMatch = 1;
-
-    bool hasPowerBeenRetrieved = false;
-
-    [System.Serializable]
-    public enum Color {
-        Green,
-        Yellow,
-        Red
+    public static int Power {
+        get { return playerPower; }
+        set { playerPower = value; powerChangedEvent.Invoke(value); }
     }
-
-    public enum GameState {
-        StartMenu,
-        Running,
-        KickingBall,
-        BallKicked,
-        FirstPinMoved,
-        FinishScreen
-    }
-
-    [System.Serializable]
-    struct Level {
-        public GameObject prefab;
-        [HideInInspector] public GameObject reference;
+    public static Bowling.Color Color {
+        get { return playerColor; }
+        set { playerColor = value; colorChangedEvent.Invoke(value); }
     }
 
     void Awake() {
-        if (Instance != null)
-            Debug.LogError("Error! There is more than one GameManager in the scene!");
-        else
-            Instance = this;
+        instance = this;
+        stateChangedEvent = new StateChangedEvent();
+        powerChangedEvent = new PowerChangedEvent();
+        colorChangedEvent = new ColorChangedEvent();
+        playerKickedBallEvent = new ManualKickEvent();
+        playerPickedUpBallEvent = new PickedUpBallEvent();
 
         for (int i = 0; i < levels.Length; i++) {
             levels[i].reference = Instantiate(levels[i].prefab, null);
             levels[i].reference.SetActive(false);
         }
+
+        StateChanged.AddListener(StateSetup);
+        PickedUpBall.AddListener(PickUpBall);
+        PowerChanged.AddListener(SetPowerPlaySpacePercent);
     }
 
-    public void PickUpBall(Color ballColor) {
-        if (ballColor == PlayerController.Instance.color) {
-            AddPlayerPower(powerGrantedByColorMatch);
-        }
-        else {
-            AddPlayerPower(powerGrantedByNonColorMatch);
-        }
+    void Start() {
+        level = 1;
+        State = State.StartMenu;
     }
 
-    void AddPlayerPower(int power) {
-        int addedPower = playerPower + power;
-        if (addedPower > maxPlayerPower) {
-            addedPower = maxPlayerPower;
-        }
-        SetPlayerPower(addedPower);
-    }
+    void StateSetup(State state) {
+        switch (state) {
+            case State.StartMenu:
+                for (int i = 0; i < levels.Length; i++) {
+                    levels[i].reference.SetActive(false);
+                }
+                levels[level - 1].reference.SetActive(true);
+                levels[level - 1].reference.GetComponent<LevelData>().ResetLevel();
 
-    void SetPlayerPower(int power) {
-        PlayerController.Instance.SetBallSize(power);
-        PowerGaugeManager.Instance.setPowerLevel(power);
-        playerPower = power;
-    }
+                Power = powerGrantedByNonColorMatch;
+                Color = levels[level - 1].reference.GetComponent<LevelData>().StartingColor;
+                hasPenalty = false;
 
-    public void SetGameState(int state) {
-        SetGameState((GameState) state);
-    }
-    public void SetGameState(GameState state) {
-        if (state == GameState.StartMenu) {
-            if (isFirstInit) {
-                isFirstInit = false;
-            }
-            else {
-                PlayerController.Instance.playerAnimator.SetTrigger("switchToIdle");
+                levelText.text = "Level " + level.ToString();
+
+                startCanvas.SetActive(true);
+                finishCanvas.SetActive(false);
+                pinsToppledCanvas.SetActive(false);
+                hudCanvas.SetActive(false);
+                break;
+            case State.Running:
+                hudCanvas.SetActive(true);
+                startCanvas.SetActive(false);
+                break;
+            case State.FirstPinMoved:
+                pinsToppledCanvas.SetActive(true);
+                hudCanvas.SetActive(false);
+                StartCoroutine(UpdatePinsToppledText());
+                break;
+            case State.FinishScreen:
+                finishCanvas.SetActive(true);
+
+                if (level == levels.Length) {
+                    gameFinishedText.text = "Game Finished!";
+                    gameFinishedButtonText.text = "Restart";
+                }
+                else {
+                    gameFinishedText.text = "Level Completed!";
+                    gameFinishedButtonText.text = "Next";
+                }
+
                 level++;
                 if (level > levels.Length)
                     level = 1;
-            }
-
-            levelText.text = "Level " + level.ToString();
-
-            for (int i = 0; i < levels.Length; i++) {
-                levels[i].reference.SetActive(false);
-            }
-
-            levels[level - 1].reference.SetActive(true);
-            levels[level - 1].reference.GetComponent<LevelData>().ResetLevel(); ;
-
-            for (int i = 0; i < levels[level-1].reference.transform.childCount; i++) {
-                levels[level - 1].reference.transform.GetChild(i).gameObject.SetActive(true);
-            }
-
-            hasPowerBeenRetrieved = false;
-            SetPlayerPower(powerGrantedByNonColorMatch);
-
-            PlayerController.Instance.SetPlayerColor(levels[level - 1].reference.GetComponent<LevelData>().startingColor);
-            PowerGaugeManager.Instance.ResetPip();
-
-            powerGrantedByColorMatch = Mathf.CeilToInt((float)(maxPlayerPower-powerGrantedByNonColorMatch) / levels[level - 1].reference.GetComponent<LevelData>().ballRows);
-
-            startMenu.SetActive(true);
-            finishScreen.SetActive(false);
-            pinsToppledMenu.SetActive(false);
-            PlayerController.Instance.ResetPlayer();
-            PinsManager.Instance.ResetPins();
+                break;
         }
-        if (state == GameState.Running) {
-            startMenu.SetActive(false);
-            hudMenu.SetActive(true);
-            PlayerController.Instance.playerAnimator.SetTrigger("switchToRun");
-        }
-        if (state == GameState.KickingBall) {
-            PlayerController.Instance.playerAnimator.SetTrigger("switchToKick");
-            PlayerController.Instance.playerAnimator.SetFloat("kickSpeed", 0.2f);
-            PlayerController.Instance.kickingMoveForwardDivider = 60;
-            PowerGaugeManager.Instance.StartPipMovement(playerPower);
-        }
-        if (state == GameState.BallKicked) {
-            if (hasPowerBeenRetrieved == false) {
-                RetrievePower();
-            }
-            PlayerController.Instance.KickBall(retrievedPower);
-        }
-        if (state == GameState.FirstPinMoved) {
-            pinsToppledMenu.SetActive(true);
-            hudMenu.SetActive(false);
-            PinsManager.Instance.ContinouslyCheckIfPinsHaveStoppedMoving();
-        }
-        if (state == GameState.FinishScreen) {
-            PlayerController.Instance.playerAnimator.SetTrigger("switchToJump");
-            finishScreen.SetActive(true);
-            if (level == levels.Length) {
-                gameFinishedText.text = "Game Finished!";
-                gameFinishedButtonText.text = "Restart";
+    }
+
+    void PickUpBall(Bowling.Color ballColor) {
+        float playSpace = maxPlayerPower - powerGrantedByNonColorMatch;
+        float ballRows = levels[level - 1].reference.GetComponent<LevelData>().BallRows;
+        int powerGrantedByColorMatch = Mathf.CeilToInt(playSpace / ballRows);
+
+        if (Color == ballColor) {
+            if (hasPenalty) {
+                hasPenalty = false;
+                AddPower(powerGrantedByNonColorMatch);
             }
             else {
-                gameFinishedText.text = "Level Completed!";
-                gameFinishedButtonText.text = "Next";
+                AddPower(powerGrantedByColorMatch);
             }
         }
-
-        gameState = state;
-        Debug.Log(state.ToString());
+        else {
+            hasPenalty = true;
+            if (Power == powerGrantedByNonColorMatch) {
+                AddPower(powerGrantedByNonColorMatch);
+            }
+            else {
+                AddPower(-powerGrantedByNonColorMatch);
+            }
+        }
     }
 
-    public void RetrievePower() {
-        if (hasPowerBeenRetrieved)
-            return;
-
-        hasPowerBeenRetrieved = true;
-        retrievedPower = PowerGaugeManager.Instance.StopPipAndGetPower();
-        PlayerController.Instance.playerAnimator.SetFloat("kickSpeed", 3f);
-        PlayerController.Instance.kickingMoveForwardDivider = 5;
+    void AddPower(int power) {
+        int addedPower = Power + power;
+        if (addedPower > maxPlayerPower) {
+            addedPower = maxPlayerPower;
+        }
+        else if (addedPower < powerGrantedByNonColorMatch) {
+            addedPower = powerGrantedByNonColorMatch;
+        }
+        Power = addedPower;
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        SetGameState(GameState.StartMenu);
+    void SetPowerPlaySpacePercent(int power) {
+        float adjustedPower = power - powerGrantedByNonColorMatch;
+        float adjustedMax = maxPlayerPower - powerGrantedByNonColorMatch;
+        powerPlaySpacePercent = adjustedPower / adjustedMax;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
+    IEnumerator UpdatePinsToppledText() {
+        while (State == State.FirstPinMoved) {
+            float numberToShow = PinsManager.MovedPins * scoreMultiplierForPinsScreen;
+            pinsToppledtext.text = numberToShow.ToString();
+            yield return null;
+        }
     }
 }

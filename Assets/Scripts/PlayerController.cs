@@ -1,183 +1,273 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using Bowling;
 
 public class PlayerController : MonoBehaviour {
-    public static PlayerController Instance;
+    [Header("Movement")]
+    [SerializeField] float playerSpeed;
+    [SerializeField] float ballRotateSpeed;
+    [SerializeField] float leftRightMovementCap;
+    [SerializeField] float leftRightMovementSpeed;
 
-    const float playerSpeed = 3;
+    [Header("Kicking Ball Modifiers")]
+    [SerializeField] float kickingBallSpeedMultiplier;
+    [SerializeField] float kickingBallExtraPush;
+    [SerializeField] float afterManualKickMultiplier;
+    [SerializeField] float ballLiftBeforeKick;
+    [SerializeField] float animationSpeedBeforeManualKick;
+    [SerializeField] float animationSpeedAfterManualKick;
 
+    [Header("Kick Force")]
+    [SerializeField] float baseKickForce;
+    [SerializeField] float maxAdditionalKickForce;
+
+    [Header("Ball Scaling")]
+    [SerializeField] float maxBallScale;
+    [SerializeField] float maxBallLift;
+    [SerializeField] float maxBallForward;
+
+    [Header("Renderers")]
     [SerializeField] Renderer playerRenderer;
     [SerializeField] Renderer ballRenderer;
+
+    [Header("Animators")]
     [SerializeField] public Animator playerAnimator;
+
+    [Header("Materials")]
     [SerializeField] Material greenMaterial;
     [SerializeField] Material yellowMaterial;
     [SerializeField] Material redMaterial;
+
+    [Header("Transforms")]
     [SerializeField] GameObject ball;
     [SerializeField] Transform camera;
-    [SerializeField] Transform cameraGameplay;
-    [SerializeField] Transform cameraKicking;
-    [SerializeField] Transform cameraCelebration;
-    [SerializeField] float cameraMoveSpeed;
+    [SerializeField] Transform model;
 
+    [Header("Camera Targets")]
+    [SerializeField] CameraTarget cameraKicking;
+    [SerializeField] CameraTarget cameraCelebration;
 
-    GameManager.Color playerColor = GameManager.Color.Green;
-    bool isMousedDown = false;
-    Vector3 mousedDownLocation;
-    float origXLocation;
-    float baseXLocation;
-    const float movementRangeX = 1;
-
-    Vector3 originalBallPosition;
-    Vector3 originalBallScale;
-    Quaternion originalBallRotation;
     Vector3 originalPlayerPosition;
-    Vector3 originalCameraPosition;
-    Quaternion originalCameraRotation;
     Vector3 originalModelPosition;
     Quaternion originalModelRotation;
+    Vector3 originalBallPosition;
+    Quaternion originalBallRotation;
+    Vector3 originalBallScale;
+    Vector3 originalCameraPosition;
+    Quaternion originalCameraRotation;
 
-    bool hasBallBeenKicked = false;
+    bool isFirstInit = true;
+    bool goalPostTriggerTimeout;
+    bool manualKicked;
 
-    const float maxBallScaleFloat = 1.6f;
-    readonly Vector3 maxBallScale = new Vector3(maxBallScaleFloat, maxBallScaleFloat, maxBallScaleFloat);
-    const float maxBallLift = 0.15f;
-    const float maxBallForward = 0.07f;
-
-    public float kickingMoveForwardDivider;
-
-    public GameManager.Color color {
-        get => playerColor;
+    [System.Serializable]
+    struct CameraTarget {
+        public Transform target;
+        public float speed;
     }
 
     void Awake() {
-        if (Instance != null)
-            Debug.LogError("Error! There is more than one PlayerController in the scene!");
-        else
-            Instance = this;
-
-        baseXLocation = transform.position.x;
-        originalBallPosition = ball.transform.localPosition;
-        originalBallScale = ball.transform.localScale;
         originalPlayerPosition = transform.position;
+        originalModelPosition = model.position;
+        originalModelRotation = model.rotation;
+        originalBallPosition = ball.transform.localPosition;
         originalBallRotation = ball.transform.rotation;
+        originalBallScale = ball.transform.localScale;
         originalCameraPosition = camera.position;
         originalCameraRotation = camera.rotation;
-        originalModelPosition = transform.GetChild(0).position;
-        originalModelRotation = transform.GetChild(0).rotation;
+
+        GameManager.StateChanged.AddListener(GameStateChanged);
+        GameManager.PowerChanged.AddListener(SetBallSize);
+        GameManager.ColorChanged.AddListener(SetPlayerColor);
+        GameManager.ManualKick.AddListener(PlayerKickedBall);
     }
 
-    // Start is called before the first frame update
-    void Start() {
+    void GameStateChanged(State state) {
+        switch (state) {
+            case State.StartMenu:
+                if (isFirstInit)
+                    isFirstInit = false;
+                else
+                    playerAnimator.SetTrigger("switchToIdle");
+                goalPostTriggerTimeout = false;
+                ResetPlayer();
+                break;
+            case State.Running:
+                playerAnimator.SetTrigger("switchToRun");
+                StartCoroutine(nameof(TakeXInput));
+                StartCoroutine(nameof(MovePlayerForward), 1f);
+                break;
+            case State.KickingBall:
+                playerAnimator.SetFloat("kickSpeed", animationSpeedBeforeManualKick);
+                playerAnimator.SetTrigger("switchToKick");
+                manualKicked = false;
 
+                StopCoroutine(nameof(MovePlayerForward));
+
+                StartCoroutine(nameof(MovePlayerForward), kickingBallSpeedMultiplier);
+                StartCoroutine(nameof(KickAnimationCompensation), kickingBallExtraPush);
+                StartCoroutine(nameof(MoveCameraTo), cameraKicking);
+                StartCoroutine(nameof(WaitForManualKick));
+                break;
+            case State.BallKicked:
+                playerAnimator.SetFloat("kickSpeed", 1f);
+                KickBall();
+
+                StopCoroutine(nameof(MovePlayerForward));
+                StopCoroutine(nameof(KickAnimationCompensation));
+                StopCoroutine(nameof(MoveCameraTo));
+
+                StartCoroutine(nameof(MoveCameraTo), cameraCelebration);
+                break;
+            case State.FinishScreen:
+                playerAnimator.SetTrigger("switchToJump");
+                break;
+        }
     }
 
-    public void SetBallSize(int level) {
-        float lerpAmount = (float)level / (float)(GameManager.maxPlayerPower - GameManager.powerGrantedByNonColorMatch);
-        ball.transform.localScale = Vector3.Lerp(originalBallScale, maxBallScale, lerpAmount);
-        Vector3 currentPosition = ball.transform.localPosition;
-        currentPosition.y = Mathf.Lerp(originalBallPosition.y, originalBallPosition.y + maxBallLift, lerpAmount);
-        currentPosition.z = Mathf.Lerp(originalBallPosition.z, originalBallPosition.z + maxBallForward, lerpAmount);
-        ball.transform.localPosition = currentPosition;
-
-
-    }
-
-    public void KickBall(float power) {
-        Vector3 currentPosition = ball.transform.position;
-        currentPosition.y += 0.2f;
-        ball.transform.position = currentPosition;
-
-        ball.GetComponent<Rigidbody>().useGravity = true;
-        ball.GetComponent<Rigidbody>().isKinematic = false;
-        ball.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Continuous;
-        ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * (1200*power));
-        playerAnimator.SetFloat("kickSpeed", 1f);
-    }
-
-    public void UnkickBall() {
-        ball.transform.localPosition = originalBallPosition;
-        ball.transform.rotation = originalBallRotation;
-        ball.GetComponent<Rigidbody>().useGravity = false;
-        ball.GetComponent<Rigidbody>().isKinematic = true;
-        ball.GetComponent<Rigidbody>().collisionDetectionMode = CollisionDetectionMode.Discrete;
-        hasBallBeenKicked = false;
-    }
-
-    public void ResetPlayer() {
+    void ResetPlayer() {
         transform.position = originalPlayerPosition;
-        UnkickBall();
-
-
-        ball.transform.localScale = originalBallScale;
-        transform.position = originalPlayerPosition;
+        model.position = originalModelPosition;
+        model.rotation = originalModelRotation;
         camera.position = originalCameraPosition;
         camera.rotation = originalCameraRotation;
-        transform.GetChild(0).position = originalModelPosition;
-        transform.GetChild(0).rotation = originalModelRotation;
+        UnkickBall();
     }
 
-    // Update is called once per frame
-    void Update() {
-        if (GameManager.Instance.state == GameManager.GameState.Running) {
-
-            camera.position = Vector3.MoveTowards(camera.position, cameraGameplay.position, cameraMoveSpeed*Time.deltaTime);
-            camera.rotation = Quaternion.RotateTowards(camera.rotation, cameraGameplay.rotation, cameraMoveSpeed*20 * Time.deltaTime);
-
-            if (Input.GetMouseButtonDown(0) && isMousedDown == false) {
-                isMousedDown = true;
-                mousedDownLocation = Input.mousePosition;
-                origXLocation = transform.position.x;
-            }
-
-            if (Input.GetMouseButtonUp(0)) {
-                isMousedDown = false;
-                mousedDownLocation = Vector3.zero;
-            }
-
-            if (isMousedDown) {
-                float rawMove = mousedDownLocation.x - Input.mousePosition.x;
-                float percentMove = rawMove / Screen.width;
-                Vector3 currentLocation = transform.position;
-                currentLocation.x = origXLocation - (percentMove * 3);
-                if (currentLocation.x > (baseXLocation + movementRangeX)) {
-                    currentLocation.x = (baseXLocation + movementRangeX);
-                }
-                else if (currentLocation.x < (baseXLocation - movementRangeX)) {
-                    currentLocation.x = (baseXLocation - movementRangeX);
-                }
-                transform.position = currentLocation;
-            }
-
-            transform.position = transform.position + ((transform.forward * playerSpeed) * Time.deltaTime);
-            ball.transform.GetChild(0).transform.Rotate(playerSpeed * 100 * Time.deltaTime, 0, 0);
-        }
-        else if (GameManager.Instance.state == GameManager.GameState.KickingBall) {
-            camera.position = Vector3.MoveTowards(camera.position, cameraKicking.position, cameraMoveSpeed * Time.deltaTime);
-            camera.rotation = Quaternion.RotateTowards(camera.rotation, cameraKicking.rotation, cameraMoveSpeed * 20 * Time.deltaTime);
-            if (Input.GetMouseButtonDown(0)) {
-                GameManager.Instance.RetrievePower();
-            }
-            ball.transform.position = ball.transform.position + ((ball.transform.forward * playerSpeed / kickingMoveForwardDivider) * Time.deltaTime);
-        }
-        else if (GameManager.Instance.state == GameManager.GameState.BallKicked || GameManager.Instance.state == GameManager.GameState.FirstPinMoved || GameManager.Instance.state == GameManager.GameState.FinishScreen) {
-            camera.position = Vector3.MoveTowards(camera.position, cameraCelebration.position, cameraMoveSpeed * Time.deltaTime);
-            camera.rotation = Quaternion.RotateTowards(camera.rotation, cameraCelebration.rotation, cameraMoveSpeed * 20 * Time.deltaTime);
-        }
-
+    void KickBall() {
+        Vector3 currentPosition = ball.transform.position;
+        currentPosition.y += ballLiftBeforeKick;
+        ball.transform.position = currentPosition;
+        ball.GetComponent<Rigidbody>().useGravity = true;
+        ball.GetComponent<Rigidbody>().isKinematic = false;
+        ball.GetComponent<Rigidbody>().AddForce(ball.transform.forward * (baseKickForce + (maxAdditionalKickForce * GameManager.PowerPercent)));
     }
 
-    public void SetPlayerColor(GameManager.Color color) {
+    void UnkickBall() {
+        ball.transform.localPosition = originalBallPosition;
+        ball.transform.rotation = originalBallRotation;
+        ball.transform.localScale = originalBallScale;
+        ball.GetComponent<Rigidbody>().useGravity = false;
+        ball.GetComponent<Rigidbody>().isKinematic = true;
+    }
+
+    IEnumerator WaitForManualKick() {
+        while (GameManager.State == State.KickingBall) {
+            if (Input.GetMouseButtonDown(0))
+                break;
+            yield return null;
+        }
+        GameManager.ManualKick.Invoke();
+    }
+
+    IEnumerator TakeXInput() {
+        bool isStored = false;
+        float storedXPosition = 0;
+        Vector3 storedMousePosition = Vector3.zero;
+
+        while (GameManager.State == State.Running) {
+            if (Input.GetMouseButton(0) == false) {
+                isStored = false;
+                goto End;
+            }
+                
+            if (isStored == false) {
+                storedXPosition = transform.position.x;
+                storedMousePosition = Input.mousePosition;
+                isStored = true;
+                goto End;
+            }
+
+            float rawMove = storedMousePosition.x - Input.mousePosition.x;
+            float percentMove = rawMove / Screen.width;
+
+            Debug.Log(storedXPosition);
+            Debug.Log(storedMousePosition);
+
+            Vector3 currentLocation = transform.position;
+            currentLocation.x = storedXPosition - (percentMove * leftRightMovementSpeed);
+
+            float maxCap = originalPlayerPosition.x + leftRightMovementCap;
+            float minCap = originalPlayerPosition.x - leftRightMovementCap;
+
+            if (currentLocation.x > maxCap)
+                currentLocation.x = maxCap;
+            else if (currentLocation.x < minCap)
+                currentLocation.x = minCap;
+
+            transform.position = currentLocation;
+
+            End:
+            yield return null;
+        }
+    }
+
+    IEnumerator MovePlayerForward(float speedMultiplier) {
+        float moveSpeedMultiplied = playerSpeed * speedMultiplier;
+        float rotateSpeedMultiplied = ballRotateSpeed * speedMultiplier;
+        while (true) {
+            transform.position = transform.position + (moveSpeedMultiplied * Time.deltaTime * transform.forward);
+            Transform ballModel = ball.transform.GetChild(0);
+            ballModel.Rotate(rotateSpeedMultiplied * Time.deltaTime, 0, 0);
+            yield return null;
+        }
+    }
+
+    IEnumerator KickAnimationCompensation(float speed) {
+        while (true) {
+            if (manualKicked) {
+                speed *= afterManualKickMultiplier;
+                manualKicked = false;
+            }
+            ball.transform.position = ball.transform.position + (speed * Time.deltaTime * ball.transform.forward);
+            yield return null;
+        }
+    }
+
+    void PlayerKickedBall() {
+        playerAnimator.SetFloat("kickSpeed", animationSpeedAfterManualKick);
+        manualKicked = true;
+    }
+
+    void SetBallSize(int level) {
+        Vector3 maxBallScaleVector = new Vector3(maxBallScale, maxBallScale, maxBallScale);
+        ball.transform.localScale = Vector3.Lerp(originalBallScale, maxBallScaleVector, GameManager.PowerPercent);
+
+        Vector3 currentPosition = ball.transform.localPosition;
+        currentPosition.y = Mathf.Lerp(originalBallPosition.y, originalBallPosition.y + maxBallLift, GameManager.PowerPercent);
+        currentPosition.z = Mathf.Lerp(originalBallPosition.z, originalBallPosition.z + maxBallForward, GameManager.PowerPercent);
+        ball.transform.localPosition = currentPosition;
+    }
+
+    IEnumerator MoveCameraTo(CameraTarget cameraTarget) {
+        Vector3 currentCameraPostion = camera.position;
+        Quaternion currentCameraRotation = camera.rotation;
+        float timeStarted = Time.time;
+        float lerpPercent = 0;
+
+        while (lerpPercent < 1) {
+            lerpPercent = (Time.time - timeStarted) / cameraTarget.speed;
+            float smoothedLerp = Mathf.SmoothStep(0, 1, lerpPercent);
+            camera.position = Vector3.Lerp(currentCameraPostion, cameraTarget.target.position, smoothedLerp);
+            camera.rotation = Quaternion.Lerp(currentCameraRotation, cameraTarget.target.rotation, smoothedLerp);
+            yield return null;
+        }
+
+        camera.position = cameraTarget.target.position;
+        camera.rotation = cameraTarget.target.rotation;
+    }
+
+    void SetPlayerColor(Bowling.Color color) {
         Material materialToAssign = null;
 
         switch (color) {
-            case GameManager.Color.Green:
+            case Bowling.Color.Green:
                 materialToAssign = greenMaterial;
                 break;
-            case GameManager.Color.Yellow:
+            case Bowling.Color.Yellow:
                 materialToAssign = yellowMaterial;
                 break;
-            case GameManager.Color.Red:
+            case Bowling.Color.Red:
                 materialToAssign = redMaterial;
                 break;
         }
@@ -185,28 +275,36 @@ public class PlayerController : MonoBehaviour {
         Material[] currentMaterials = playerRenderer.materials;
         currentMaterials[2] = materialToAssign;
         playerRenderer.materials = currentMaterials;
+
         currentMaterials = ballRenderer.materials;
         currentMaterials[0] = materialToAssign;
         ballRenderer.materials = currentMaterials;
-
-        playerColor = color;
     }
 
     public void OnTriggerEnter(Collider other) {
         switch (other.tag) {
             case "Change Color Wall":
-                SetPlayerColor(other.GetComponent<ChangeColorWall>().color);
+                GameManager.Color = other.GetComponent<ChangeColorWall>().Color;
                 break;
             case "Pickup Ball":
-                GameManager.Instance.PickUpBall(other.GetComponent<PickupBall>().color);
+                GameManager.PickedUpBall.Invoke(other.GetComponent<PickupBall>().Color);
                 other.GetComponent<PickupBall>().HideBall();
                 break;
             case "Goal Post":
-                if (hasBallBeenKicked == true)
-                    break;
-                GameManager.Instance.SetGameState(GameManager.GameState.KickingBall);
-                hasBallBeenKicked = true;
+                GoalPostTrigger();
                 break;
         }
+    }
+
+    void GoalPostTrigger() {
+        if (goalPostTriggerTimeout)
+            return;
+
+        goalPostTriggerTimeout = true;
+        GameManager.State = State.KickingBall;
+    }
+
+    public void Kicked() {
+        GameManager.State = State.BallKicked;
     }
 }

@@ -1,123 +1,132 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using Bowling;
 
-public class PinsManager : MonoBehaviour
-{
-    public static PinsManager Instance;
+public class PinsManager : MonoBehaviour {
+    [SerializeField] float pinMovementCheckingInterval;
+    [SerializeField] float pinMovementDistanceThreshold;
+    [SerializeField] float dudKickTimeout;
+
     Vector3[] pinOriginalPositions;
     Quaternion[] pinOriginalRotations;
-    // Start is called before the first frame update
-    Vector3[] pinLastPositions;
 
-    const float distanceToCheck = 0.2f;
-    const float checkingInterval = 0.5f;
+    static float movedPins;
 
-    bool kickTimeoutStarted = false;
-
-    public float movedPins;
-
+    public static float MovedPins { get => movedPins; }
+    
     void Awake() {
-        if (Instance != null)
-            Debug.LogError("Error! There is more than one PinsManager in the scene!");
-        else
-            Instance = this;
-
         pinOriginalPositions = new Vector3[transform.childCount];
         for (int i = 0; i < transform.childCount; i++) {
             pinOriginalPositions[i] = transform.GetChild(i).transform.position;
         }
+
         pinOriginalRotations = new Quaternion[transform.childCount];
         for (int i = 0; i < transform.childCount; i++) {
             pinOriginalRotations[i] = transform.GetChild(i).transform.rotation;
         }
+
+        GameManager.StateChanged.AddListener(GameStateChanged);
     }
 
-    void Start()
-    {
-        
+    void GameStateChanged(State state) {
+        switch (state) {
+            case State.StartMenu:
+                ResetPins();
+                break;
+            case State.BallKicked:
+                StartCoroutine(nameof(FirstPinMovementChecking));
+                break;
+            case State.FirstPinMoved:
+                StartCoroutine(nameof(PinsMovementChecking));
+                break;
+        }
     }
 
-    public void ResetPins() {
+    void ResetPins() {
         for (int i = 0; i < transform.childCount; i++) {
             transform.GetChild(i).transform.position = pinOriginalPositions[i];
         }
         for (int i = 0; i < transform.childCount; i++) {
             transform.GetChild(i).transform.rotation = pinOriginalRotations[i];
         }
-
-        kickTimeoutStarted = false;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        if (GameManager.Instance.state == GameManager.GameState.BallKicked) {
-            if (kickTimeoutStarted == false) {
-                Invoke("KickTimeout", 2f);
-                kickTimeoutStarted = true;
-            }
+    IEnumerator FirstPinMovementChecking() {
+        Invoke(nameof(StopFirstPinMovementChecking), dudKickTimeout);
 
-            if (FirstPinHasMoved()) {
-                CancelInvoke("KickTimeout");
-                GameManager.Instance.SetGameState(GameManager.GameState.FirstPinMoved);
-            }
-        }
-        else if (GameManager.Instance.state == GameManager.GameState.FirstPinMoved) {
-            TallyMovedPins();
-        }
-    }
-
-    void KickTimeout() {
-        GameManager.Instance.SetGameState(GameManager.GameState.FirstPinMoved);
-    }
-
-    void PinsHaveStoppedMoving() {
-        GameManager.Instance.SetGameState(GameManager.GameState.FinishScreen);
-    }
-
-    public void ContinouslyCheckIfPinsHaveStoppedMoving () {
-        if (pinLastPositions == null) {
-            pinLastPositions = new Vector3[transform.childCount];
+        while (true) {
             for (int i = 0; i < transform.childCount; i++) {
-                pinLastPositions[i] = transform.GetChild(i).transform.position;
-            }
-            Invoke("ContinouslyCheckIfPinsHaveStoppedMoving", checkingInterval);
-            return;
-        }
-            
-        for (int i = 0; i < transform.childCount; i++) {
-            if (Vector3.Distance(transform.GetChild(i).transform.position, pinLastPositions[i]) > distanceToCheck) {
-                for (int x = 0; x < transform.childCount; x++) {
-                    pinLastPositions[x] = transform.GetChild(x).transform.position;
+                if (Vector3.Distance(transform.GetChild(i).position, pinOriginalPositions[i]) > pinMovementDistanceThreshold) {
+                    goto FirstPinMoved;
                 }
-                Invoke("ContinouslyCheckIfPinsHaveStoppedMoving", checkingInterval);
-                return;
             }
-        }
+            goto NoPinsMoved;
 
-        PinsHaveStoppedMoving();
+            NoPinsMoved:
+            yield return null;
+            continue;
+
+            FirstPinMoved:
+            StopFirstPinMovementChecking();
+            break;
+        }
     }
 
-    bool FirstPinHasMoved() {
-        bool returnValue = false;
+    void StopFirstPinMovementChecking() {
+        CancelInvoke(nameof(StopFirstPinMovementChecking));
+        StopCoroutine(nameof(FirstPinMovementChecking));
+        GameManager.State = State.FirstPinMoved;
+    }
+
+    IEnumerator PinsMovementChecking() {
+        StartCoroutine(nameof(MovedPinsTallying));
+
+        Vector3[] pinLastPositions = new Vector3[transform.childCount];
         for (int i = 0; i < transform.childCount; i++) {
-            if (Vector3.Distance(transform.GetChild(i).transform.position, pinOriginalPositions[i]) > distanceToCheck) {
-                returnValue = true;
+            pinLastPositions[i] = transform.GetChild(i).position;
+        }
+
+        while (true) {
+            // Don't check every frame (differences become too small to detect)
+            yield return new WaitForSeconds(pinMovementCheckingInterval);
+
+            for (int i = 0; i < transform.childCount; i++) {
+                if (Vector3.Distance(transform.GetChild(i).position, pinLastPositions[i]) > pinMovementDistanceThreshold) {
+                    // If we find a pin that's moved greater than distanceToCheck, refill array of last pin positions
+                    for (int x = 0; x < transform.childCount; x++) {
+                        pinLastPositions[x] = transform.GetChild(x).position;
+                    }
+                    // and keep checking
+                    goto FoundOne;
+                }
+            }
+            // else, inform GameManager that pins have stopped moving, and stop checking
+            goto FoundNone;
+
+            FoundOne:
+                continue;
+
+            FoundNone:
+                StopPinsMovementChecking();
                 break;
-            }
         }
-        return returnValue;
     }
 
-    void TallyMovedPins() {
-        float amountOfMovedPins = 0;
-        for (int i = 0; i < transform.childCount; i++) {
-            if (Vector3.Distance(transform.GetChild(i).transform.position, pinOriginalPositions[i]) > distanceToCheck) {
-                amountOfMovedPins++;
+    void StopPinsMovementChecking() {
+        StopCoroutine(nameof(MovedPinsTallying));
+        GameManager.State = State.FinishScreen;
+    }
+
+    IEnumerator MovedPinsTallying() {
+        movedPins = 0;
+        while (true) {
+            float amountOfMovedPins = 0;
+            for (int i = 0; i < transform.childCount; i++) {
+                if (Vector3.Distance(transform.GetChild(i).position, pinOriginalPositions[i]) > pinMovementDistanceThreshold)
+                    amountOfMovedPins++;
             }
+            movedPins = amountOfMovedPins;
+            yield return null;
         }
-        movedPins = amountOfMovedPins;
-        GameManager.Instance.pinsToppledtext.text = (movedPins*10).ToString();
     }
 }

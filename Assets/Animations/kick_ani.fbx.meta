@@ -60,12 +60,11 @@ ModelImporter:
       curves: []
       events:
       - time: 0.7235772
-        functionName: SetGameState
+        functionName: Kicked
         data: 
-        objectReferenceParameter: {fileID: 11500000, guid: 3d9dca61f2e6df74dbcbc4ffca5d3b9a,
-          type: 3}
+        objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
-        intParameter: 3
+        intParameter: 0
         messageOptions: 0
       transformMask: []
       maskType: 3

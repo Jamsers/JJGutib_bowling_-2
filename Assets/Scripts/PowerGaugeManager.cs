@@ -1,54 +1,47 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using Bowling;
 
-public class PowerGaugeManager : MonoBehaviour
-{
-    public static PowerGaugeManager Instance;
-
+public class PowerGaugeManager : MonoBehaviour {
+    [SerializeField] float pipMoveSpeed;
     [SerializeField] RectTransform powerFullMaskRect;
     [SerializeField] RectTransform powerFullRect;
     [SerializeField] RectTransform pipBaseRect;
 
-    public int testGaugeFill;
+    // Manually checked, depends on gauge image graphic
     readonly float[] HardCodedPips = { 0.0549f, 0.1172f, 0.1818f, 0.2540f, 0.3404f, 0.4268f, 0.5267f, 0.6233f, 0.7238f, 0.8358f, 0.9644f };
 
     float gaugeBaseHeight;
 
-    bool isPipMoving = false;
-    float pipPower;
-    const float pipMoveSpeed = 0.5f;
-
     void Awake() {
-        if (Instance != null)
-            Debug.LogError("Error! There is more than one PowerGaugeManager in the scene!");
-        else
-            Instance = this;
-
-        transform.parent.gameObject.SetActive(false);
         gaugeBaseHeight = GetComponent<RectTransform>().rect.height;
 
         ConvertRectToBottomBase(powerFullMaskRect);
         ConvertRectToBottomBase(powerFullRect);
         ConvertRectToBottomBase(pipBaseRect);
-
         SetRectHeightToPipLevel(powerFullMaskRect, 0);
         SetRectHeightToPipLevel(powerFullRect, 1f);
         SetRectHeightToPipLevel(pipBaseRect, 0);
+
+        GameManager.StateChanged.AddListener(GameStateChanged);
+        GameManager.PowerChanged.AddListener(PowerChanged);
+        GameManager.ManualKick.AddListener(StopPipMovement);
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        //setPowerLevel(9);
-        //StartPipMovement(9);
-        //Invoke("StopPipAndGetPower", 5);
+    void GameStateChanged(State state) {
+        switch (state) {
+            case State.StartMenu:
+                pipBaseRect.gameObject.SetActive(false);
+                SetRectHeightToPipLevel(pipBaseRect, 0);
+                break;
+            case State.KickingBall:
+                StartCoroutine(nameof(PipMovement), GameManager.Power);
+                break;
+        }
     }
 
     void ConvertRectToBottomBase(RectTransform rectTransform) {
         Vector2 currentAnchor;
-
         currentAnchor = rectTransform.anchorMax;
         currentAnchor.y = 0;
         rectTransform.anchorMax = currentAnchor;
@@ -72,63 +65,41 @@ public class PowerGaugeManager : MonoBehaviour
         rectTransform.anchoredPosition = currentPosition;
     }
 
-    public void setPowerLevel(int powerLevel) {
-        SetRectHeightToPipLevel(powerFullMaskRect, powerLevel);
-    }
-
-    public void StartPipMovement(int powerLevel) {
-        pipBaseRect.gameObject.SetActive(true);
-        StartCoroutine(PipMovement(powerLevel));
-    }
-
-    public float StopPipAndGetPower() {
-        isPipMoving = false;
-        //pipBaseRect.gameObject.SetActive(false);
-        return pipPower;
-    }
-
-    public void ResetPip() {
-        SetRectHeightToPipLevel(pipBaseRect, 0);
-        pipBaseRect.gameObject.SetActive(false);
+    void PowerChanged(int power) {
+        SetRectHeightToPipLevel(powerFullMaskRect, power);
     }
 
     IEnumerator PipMovement(int moveCap) {
-        isPipMoving = true;
-
+        pipBaseRect.gameObject.SetActive(true);
         bool isMovingUp = true;
         float floor = HardCodedPips[0];
         float currentLocation = floor;
         float ceiling = HardCodedPips[moveCap];
 
-        while (isPipMoving) {
-            float moveAmount = pipMoveSpeed * Time.deltaTime;
+        while (true) {
+            float moveAmount = pipMoveSpeed * GameManager.PowerPercent * Time.deltaTime;
+
             if (isMovingUp) {
-                currentLocation = currentLocation + moveAmount;
+                currentLocation += moveAmount;
                 if (currentLocation >= ceiling) {
                     currentLocation = ceiling;
                     isMovingUp = false;
                 }
             }
             else if (!isMovingUp) {
-                currentLocation = currentLocation - moveAmount;
+                currentLocation -= moveAmount;
                 if (currentLocation <= floor) {
                     currentLocation = floor;
                     isMovingUp = true;
                 }
-             }
+            }
 
             SetRectHeightToPipLevel(pipBaseRect, currentLocation);
-            pipPower = (currentLocation-floor) / (HardCodedPips[10]-floor);
-
             yield return null;
         }
-
-        
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+    void StopPipMovement() {
+        StopCoroutine(nameof(PipMovement));
     }
 }
