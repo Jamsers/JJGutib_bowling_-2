@@ -3,6 +3,9 @@ using UnityEngine;
 using Bowling;
 
 public class PlayerController : MonoBehaviour {
+    [Header("Celebration")]
+    [SerializeField] int celebrationThreshold;
+
     [Header("Movement")]
     [SerializeField] float playerSpeed;
     [SerializeField] float ballRotateSpeed;
@@ -120,7 +123,10 @@ public class PlayerController : MonoBehaviour {
                 StartCoroutine(nameof(MoveCameraTo), cameraCelebration);
                 break;
             case State.FinishScreen:
-                playerAnimator.SetTrigger("switchToJump");
+                if (PinsManager.MovedPins >= celebrationThreshold)
+                    playerAnimator.SetTrigger("switchToJump");
+                else
+                    playerAnimator.SetTrigger("switchToIdle");
                 break;
         }
     }
