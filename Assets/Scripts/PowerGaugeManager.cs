@@ -8,7 +8,7 @@ public class PowerGaugeManager : MonoBehaviour {
     [SerializeField] RectTransform powerFullRect;
     [SerializeField] RectTransform pipBaseRect;
 
-    // Manually checked, depends on gauge image graphic
+    // Manually checked, depends on gauge image graphic due to non linear notches
     readonly float[] HardCodedPips = { 0.0549f, 0.1172f, 0.1818f, 0.2540f, 0.3404f, 0.4268f, 0.5267f, 0.6233f, 0.7238f, 0.8358f, 0.9644f };
 
     float gaugeBaseHeight;
@@ -40,6 +40,7 @@ public class PowerGaugeManager : MonoBehaviour {
         }
     }
 
+    // Convert rect anchors to bottom at runtime so that images can be freely adjusted in the editor
     void ConvertRectToBottomBase(RectTransform rectTransform) {
         Vector2 currentAnchor;
         currentAnchor = rectTransform.anchorMax;
@@ -47,6 +48,7 @@ public class PowerGaugeManager : MonoBehaviour {
         rectTransform.anchorMax = currentAnchor;
     }
 
+    // Grows and shrinks image based on current bottom as anchor
     void SetRectHeightToPipLevel(RectTransform rectTransform, int pipLevel) {
         SetRectHeightToPipLevel(rectTransform, HardCodedPips[pipLevel]);
     }
@@ -77,8 +79,10 @@ public class PowerGaugeManager : MonoBehaviour {
         float ceiling = HardCodedPips[moveCap];
 
         while (true) {
+            // Make speed slower if gauge level is lower
             float moveAmount = pipMoveSpeed * GameManager.PowerPercent * Time.deltaTime;
 
+            // Move pip up and down within constraints of filled gauge
             if (isMovingUp) {
                 currentLocation += moveAmount;
                 if (currentLocation >= ceiling) {

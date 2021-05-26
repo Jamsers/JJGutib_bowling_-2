@@ -56,10 +56,13 @@ public class PinsManager : MonoBehaviour {
 
         while (true) {
             for (int i = 0; i < transform.childCount; i++) {
+                // If any one pin strays too far from their original position
                 if (Vector3.Distance(transform.GetChild(i).position, pinOriginalPositions[i]) > pinMovementDistanceThreshold) {
+                    // stop and inform GameManager that the first pin has moved
                     goto FirstPinMoved;
                 }
             }
+            // else keep checking until dudKickTimeout
             goto NoPinsMoved;
 
             NoPinsMoved:
@@ -100,7 +103,7 @@ public class PinsManager : MonoBehaviour {
                     goto FoundOne;
                 }
             }
-            // else, inform GameManager that pins have stopped moving, and stop checking
+            // else inform GameManager that pins have stopped moving, and stop checking
             goto FoundNone;
 
             FoundOne:

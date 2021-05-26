@@ -153,8 +153,9 @@ public class PlayerController : MonoBehaviour {
 
     IEnumerator WaitForManualKick() {
         while (GameManager.State == State.KickingBall) {
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButtonDown(0)) {
                 break;
+            }
             yield return null;
         }
         GameManager.ManualKick.Invoke();
@@ -166,11 +167,13 @@ public class PlayerController : MonoBehaviour {
         Vector3 storedMousePosition = Vector3.zero;
 
         while (GameManager.State == State.Running) {
+            // If mouse/finger is up, invalidate stored data and don't do anything
             if (Input.GetMouseButton(0) == false) {
                 isStored = false;
                 goto End;
             }
                 
+            // Store location of cursor/finger and player transform, used as base for movement
             if (isStored == false) {
                 storedXPosition = transform.position.x;
                 storedMousePosition = Input.mousePosition;
@@ -178,11 +181,9 @@ public class PlayerController : MonoBehaviour {
                 goto End;
             }
 
+            // Use percentage rather than raw numbers to ensure consistent movement across resolutions
             float rawMove = storedMousePosition.x - Input.mousePosition.x;
             float percentMove = rawMove / Screen.width;
-
-            Debug.Log(storedXPosition);
-            Debug.Log(storedMousePosition);
 
             Vector3 currentLocation = transform.position;
             currentLocation.x = storedXPosition - (percentMove * leftRightMovementSpeed);
@@ -190,6 +191,7 @@ public class PlayerController : MonoBehaviour {
             float maxCap = originalPlayerPosition.x + leftRightMovementCap;
             float minCap = originalPlayerPosition.x - leftRightMovementCap;
 
+            // Cap movement range
             if (currentLocation.x > maxCap)
                 currentLocation.x = maxCap;
             else if (currentLocation.x < minCap)
@@ -213,6 +215,7 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
+    // Adjustable push forward of ball while kicking to match up with player (prevent clipping/lack of contact on kick)
     IEnumerator KickAnimationCompensation(float speed) {
         while (true) {
             if (manualKicked) {

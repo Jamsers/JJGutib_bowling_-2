@@ -72,7 +72,6 @@ public class GameManager : MonoBehaviour {
 
         for (int i = 0; i < levels.Length; i++) {
             levels[i].reference = Instantiate(levels[i].prefab, null);
-            levels[i].reference.SetActive(false);
         }
 
         StateChanged.AddListener(StateSetup);
@@ -129,6 +128,7 @@ public class GameManager : MonoBehaviour {
                 level++;
                 if (level > levels.Length)
                     level = 1;
+
                 break;
         }
     }
